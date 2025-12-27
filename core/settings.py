@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-#=z!!(i%4@#hod6mpav0zpp**qw&(w7cc_6x#4&q%bhj-y&2x^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['www.sistema.edilsonfurlan.com.br', 'sistema.edilsonfurlan.com.br', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -127,6 +128,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://www.sistema.edilsonfurlan.com.br',
+    'https://sistema.edilsonfurlan.com.br',
+]
 
 # Media Files (Uploads)
 MEDIA_URL = '/media/'
