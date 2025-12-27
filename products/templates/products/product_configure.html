@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Configurar Cores: {{ produto.nome }}{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 800px; margin: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f9f9f9; }
+        .actions { margin-top: 20px; text-align: right; }
+        button { padding: 10px 25px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #2980b9; }
+        select { padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 4px; }
+        .mat-info { font-size: 0.9em; color: #555; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Configurar Cores: {{ produto.nome }}</h1>
+        <p>Defina as cores para os materiais especificados no Molde (<b>{{ produto.molde.nome }}</b>).</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- PEÇAS (TECIDOS) -->
+            <h2>Partes do Produto (Tecidos)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Peça / Material</th>
+                        <th>Cor Selecionada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tbody>
+                    {% for piece in pieces %}
+                    <tr>
+                        <td>
+                            <strong>{{ piece.nome_original }}</strong><br>
+                            <span class="mat-info">
+                                Padrão: {{ piece.material_padrao.nome|default:"Não definido" }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.8em; color: #666;">Cor:</label>
+                                    <select name="cor_piece_{{ piece.id }}" required>
+                                        <option value="">-- Cor --</option>
+                                        {% for cor in cores %}
+                                            <option value="{{ cor.id }}"
+                                                {% if existing_piece_configs|get_item:piece.id|get_item:'cor' == cor.id %}selected{% endif %}>
+                                                {{ cor.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.8em; color: #666;">Material (Opcional):</label>
+                                    <select name="mat_piece_{{ piece.id }}" {% if produto.parent %}disabled style="background: #eee; cursor: not-allowed;"{% endif %}>
+                                        <option value="">Usar Padrão ({{ piece.material_padrao.nome }})</option>
+                                        {% for mat in all_materials %}
+                                            {% if mat.eh_tecido %} 
+                                            <option value="{{ mat.id }}"
+                                                {% if existing_piece_configs|get_item:piece.id|get_item:'mat' == mat.id %}selected{% endif %}>
+                                                {{ mat.nome }}
+                                            </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    {% if produto.parent %}
+                                        <small style="color:orange;">(Travado pela Referência)</small>
+                                        <!-- Hidden input to maintain value if needed or just ignore on server -->
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <hr style="margin: 40px 0;">
+
+            <!-- INSUMOS (ACESSÓRIOS) -->
+            <h2>Aviamentos e Acessórios</h2>
+            {% if insumos %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Item / Padrão</th>
+                        <th>Quantidade</th>
+                        <th>Configuração</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in insumos %}
+                    <tr>
+                        <td>
+                            {{ item.material.nome }}
+                        </td>
+                        <td>
+                            {{ item.quantidade }} {{ item.material.unidade }}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 10px;">
+                                {% if item.material.tem_cor %}
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.8em; color: #666;">Cor:</label>
+                                    <select name="cor_insumo_{{ item.id }}" required>
+                                        <option value="">-- Cor --</option>
+                                        {% for cor in cores %}
+                                            <option value="{{ cor.id }}"
+                                                {% if existing_insumo_configs|get_item:item.id|get_item:'cor' == cor.id %}selected{% endif %}>
+                                                {{ cor.nome }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {% else %}
+                                <div style="flex: 1; padding-top: 20px;">
+                                    <span style="color: grey;">Sem Cor</span>
+                                </div>
+                                {% endif %}
+                                
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.8em; color: #666;">Material Substit. (Opcional):</label>
+                                    <select name="mat_insumo_{{ item.id }}" {% if produto.parent %}disabled style="background: #eee; cursor: not-allowed;"{% endif %}>
+                                        <option value="">Usar Padrão</option>
+                                        {% for mat in all_materials %}
+                                            {% if not mat.eh_tecido %} 
+                                            <option value="{{ mat.id }}"
+                                                {% if existing_insumo_configs|get_item:item.id|get_item:'mat' == mat.id %}selected{% endif %}>
+                                                {{ mat.nome }}
+                                            </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    {% if produto.parent %}
+                                        <small style="color:orange;">(Travado)</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p><i>Este molde não exige aviamentos cadastrados.</i></p>
+            {% endif %}
+
+            <div class="actions" style="position: sticky; bottom: 0; background: white; padding: 20px; border-top: 1px solid #eee;">
+                <button type="submit" style="background: #27ae60; width: 100%;">Salvar Configuração</button>
+            </div>
+        </form>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'product_list' %}" style="color: #3498db; text-decoration: none;">← Voltar para Produtos</a>
+    </div>
+{% endblock %}

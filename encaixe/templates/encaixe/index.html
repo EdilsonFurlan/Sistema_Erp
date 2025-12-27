@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Sistema de Encaixe - Menu Principal{% endblock %}
+
+{% block extra_head %}
+{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <h1>Controle Integrado (ERP)</h1>
+    
+    <div class="menu-grid">
+        <!-- Vendas -->
+        <a href="{% url 'sales_order_create' %}" class="menu-item green">
+            Nova Venda (ERP)
+        </a>
+        <a href="{% url 'order_list' %}" class="menu-item">
+            Lista de Pedidos
+        </a>
+
+        <!-- Produtos -->
+        <a href="{% url 'product_list' %}" class="menu-item accent">
+            Catálogo de Produtos
+        </a>
+        
+        <!-- Moldes (Novo) -->
+        <a href="{% url 'molde_list' %}" class="menu-item purple">
+            Moldes & CAD
+        </a>
+
+        <!-- Compras -->
+        <a href="{% url 'purchase_planning' %}" class="menu-item secondary">
+            Planejamento de Compras
+        </a>
+        <a href="{% url 'purchase_order_list' %}" class="menu-item">
+            Ordens de Compra (OCs)
+        </a>
+
+        <!-- Estoque (Novo) -->
+        <a href="{% url 'material_list' %}" class="menu-item" style="background-color: #16a085;">
+            Estoque & Materiais
+        </a>
+
+        <!-- Engenharia (Novo) -->
+        <a href="{% url 'engineering_dashboard' %}" class="menu-item" style="background-color: #8e44ad;">
+            Engenharia / OS
+        </a>
+
+        <!-- Produção / PCP (Novo) -->
+        <a href="{% url 'production_dashboard' %}" class="menu-item" style="background-color: #e67e22;">
+            PCP / Fábrica
+        </a>
+
+        <!-- Admin -->
+        <a href="{% url 'admin:index' %}" class="menu-item secondary">
+            Admin (Backend)
+        </a>
+    </div>
+</div>
+{% endblock %}

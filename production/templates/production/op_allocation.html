@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Alocação de Recursos - OP #{{ op.id }}{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <div class="erp-header">
+        <div>
+            <h1>Gerenciar Alocação de Máquinas</h1>
+            <p class="text-muted">Ordem de Produção #{{ op.id }} - {{ op.produto.nome }} ({{ op.quantidade_total }} pçs)</p>
+        </div>
+    </div>
+
+    <form method="post" class="card shadow-sm border-0 rounded-3">
+        {% csrf_token %}
+        <div class="card-body p-4">
+            <h5 class="mb-4 d-flex align-items-center gap-2">
+                <i class="fas fa-network-wired text-primary"></i> Selecione as máquinas para esta produção:
+            </h5>
+            
+            <div class="row g-3">
+                {% for maq in maquinas %}
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <label class="d-flex p-3 border rounded-3 cursor-pointer h-100 position-relative machine-card {% if maq.op_atual and maq.op_atual != op %}bg-light opacity-75{% endif %} {% if maq in op.maquinas.all %}border-primary bg-primary-subtle{% endif %}" style="transition: all 0.2s;">
+                        <div class="form-check w-100">
+                            <input class="form-check-input" type="checkbox" name="maquinas" value="{{ maq.id }}"
+                                {% if maq in op.maquinas.all %}checked{% endif %}
+                                id="maq_{{ maq.id }}" style="transform: scale(1.2);">
+                            
+                            <div class="ms-2">
+                                <label class="form-check-label fw-bold d-block text-dark mb-1" for="maq_{{ maq.id }}">
+                                    {{ maq.nome }}
+                                </label>
+                                <small class="text-muted d-block mb-2">{{ maq.setor|default:"-- Setor --" }}</small>
+                                
+                                {% if maq.op_atual and maq.op_atual != op %}
+                                    <div class="badge bg-warning text-dark border border-warning-subtle d-inline-block text-wrap text-start">
+                                        <i class="fas fa-exclamation-triangle"></i> Em uso na OP #{{ maq.op_atual.id }}
+                                    </div>
+                                {% endif %}
+                                 {% if maq.op_atual == op %}
+                                    <div class="badge bg-success text-white border border-success-subtle d-inline-block">
+                                        <i class="fas fa-link"></i> Vinculada Atual
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                {% empty %}
+                <div class="col-12 py-5 text-center">
+                    <p class="text-muted">Nenhuma máquina cadastrada no sistema.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-5 d-flex gap-3 border-top pt-4">
+                <button type="submit" class="btn btn-primary px-4 py-2 fw-bold shadow-sm">
+                    <i class="fas fa-save me-2"></i> Salvar Alocação
+                </button>
+                <a href="{% url 'op_list' %}" class="btn btn-outline-secondary px-4 py-2">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+.machine-card:hover {
+    border-color: #3182ce !important;
+    background-color: #f0f9ff;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+.cursor-pointer { cursor: pointer; }
+</style>
+{% endblock %}

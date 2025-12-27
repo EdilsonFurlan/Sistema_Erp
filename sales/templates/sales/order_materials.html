@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Relatório de Materiais - Pedido #{{ order.id }}{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 800px; margin: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f9f9f9; }
+        .btn { display: inline-block; padding: 10px 20px; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; margin-top: 20px; }
+        .btn:hover { background: #7f8c8d; }
+        .note { font-size: 0.9em; color: #666; margin-top: 10px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Relatório de Materiais</h1>
+        <p><strong>Pedido #{{ order.id }}</strong> - {{ order.cliente }}</p>
+
+        {% if report %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Cor</th>
+                    <th>Quantidade Estimada</th>
+                    <th>Unidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report %}
+                <tr>
+                    <td>{{ item.material.nome }}</td>
+                    <td>
+                        {% if item.cor %}
+                            <span style="display:inline-block; width:12px; height:12px; background-color:{{ item.cor.hex_code }}; border:1px solid #ccc; margin-right:5px; vertical-align:middle;"></span>
+                            <strong>{{ item.cor.nome }}</strong>
+                        {% else %}
+                            -
+                        {% endif %}
+                        
+                        {% if item.pecas %}
+                            <br>
+                            <small style="color: #666; font-size: 0.85em; display: block; margin-top: 4px;">
+                                {% for peca in item.pecas %}
+                                    <span style="white-space:nowrap;">{{ peca.nome }} <strong>({{ peca.qtd_total|floatformat:0 }})</strong></span>{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </small>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ item.qtd|format_unit:item.material }}</strong></td>
+                    <td>{{ item.unidade }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <p class="note">
+            * <strong>Cálculo:</strong> Baseado em "Consumo Médio Piloto" (se cadastrado) ou "Estimativa de Enfesto" (baseada na largura).<br>
+            * Verifique se todas as peças do molde estão listadas acima. Peças não configuradas no produto não aparecem aqui.
+        </p>
+        
+        {% else %}
+            <p>Não há dados de materiais configurados para este pedido.</p>
+        {% endif %}
+
+        <a href="{% url 'order_detail' order.id %}" class="btn">← Voltar para Detalhes do Pedido</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}OC #{{ oc.id }} - Detalhes{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .paper { background: white; padding: 40px; border-radius: 4px; max-width: 800px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+        .company-name { font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .doc-title { text-align: right; }
+        .doc-title h1 { margin: 0; font-size: 28px; color: #2c3e50; }
+        .meta { color: #666; margin-top: 5px; }
+        
+        h2 { font-size: 18px; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-top: 30px; color: #555; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f8f9fa; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+        
+        .val { font-family: 'Consolas', monospace; font-weight: bold; }
+        
+        .footer { margin-top: 50px; border-top: 1px solid #ccc; padding-top: 20px; text-align: center; color: #777; font-size: 12px; }
+        
+        .related-orders { font-size: 13px; color: #666; margin-top: 10px; }
+        .badge { background: #eee; padding: 2px 6px; border-radius: 3px; margin-right: 5px; }
+        
+        .btn { display: inline-block; padding: 10px 20px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; text-decoration: none; font-weight: bold; font-family: sans-serif; }
+        .btn:hover { opacity: 0.9; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .paper { box-shadow: none; max-width: 100%; }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="paper">
+        <div class="header">
+            <div class="company-name">MINHA EMPRESA</div>
+            <div class="doc-title">
+                <h1>Ordem de Compra #{{ oc.id }}</h1>
+                <div class="meta">Data: {{ oc.data_criacao|date:"d/m/Y" }}</div>
+                <div class="meta">Status: <strong>{{ oc.get_status_display }}</strong></div>
+            </div>
+        </div>
+        
+        <div class="related-orders">
+            <strong>Referente aos Pedidos:</strong>
+            {% for pedido in oc.pedidos.all %}
+                <span class="badge">#{{ pedido.id }} ({{ pedido.cliente }})</span>
+            {% endfor %}
+        </div>
+
+        <h2>Itens para Compra</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Material / Cor</th>
+                    <th>Necessidade Total</th>
+                    <th>Estoque (Ref.)</th>
+                    <th>Comprar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% load custom_filters %}
+                {% for item in oc.itens.all %}
+                <tr>
+                    <td>
+                        <strong>{{ item.material.nome }}</strong>
+                        <div style="font-size:12px; color:#555">{{ item.cor.nome|default:"-" }}</div>
+                    </td>
+                    <td class="val">{{ item.quantidade_necessaria|format_unit:item.material }} {{ item.material.unidade }}</td>
+                    <td class="val" style="color:#777">{{ item.quantidade_estoque_na_epoca|format_unit:item.material }} {{ item.material.unidade }}</td>
+                    <td class="val" style="color: #c0392b; font-size:1.1em;">
+                        {{ item.quantidade_comprar|format_unit:item.material }} {{ item.material.unidade }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            Documento gerado automaticamente pelo Sistema de Encaixe.
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; display:flex; justify-content:center; gap: 10px;" class="no-print">
+            <a href="{% url 'purchase_order_list' %}" class="btn" style="background:#666; color:white;">Voltar</a>
+            
+            <form action="{% url 'purchase_order_recalculate' oc.id %}" method="POST" onsubmit="return confirm('Isso recalculará todos os itens com base no estoque ATUAL. Deseja continuar?');">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="background:#f39c12; color:white;">Recalcular Necessidades</button>
+            </form>
+            
+            <button onclick="window.print()" class="btn" style="background:#3498db; color:white;">Imprimir</button>
+            
+            <form action="{% url 'purchase_order_delete' oc.id %}" method="POST" onsubmit="return confirm('Tem certeza? Isso excluirá a Ordem de Compra. Os pedidos voltarão para pendentes.');">
+                {% csrf_token %}
+                <button type="submit" class="btn" style="background:#c0392b; color:white;">Excluir Ordem</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

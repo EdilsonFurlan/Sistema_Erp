@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Movimentações de Estoque{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #eee; }
+        .btn { padding: 8px 12px; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header-flex">
+            <h1>Histórico de Entradas</h1>
+            <div>
+                <a href="{% url 'material_list' %}" class="btn">Voltar ao Estoque</a>
+                <a href="{% url 'stock_entry_create' %}" class="btn" style="background:#2ecc71; margin-left: 10px;">+ Nova Entrada</a> 
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Material</th>
+                    <th>Cor</th>
+                    <th>Qtd</th>
+                    <th>Preço Un.</th>
+                    <th>Fornecedor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mov in movements %}
+                <tr>
+                    <td>{{ mov.data }}</td>
+                    <td>{{ mov.material.nome }}</td>
+                    <td>{{ mov.cor.nome|default:"-" }}</td>
+                    <td>{{ mov.quantidade }}</td>
+                    <td>R$ {{ mov.preco_unitario }}</td>
+                    <td>{{ mov.fornecedor }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">Nenhuma movimentação registrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

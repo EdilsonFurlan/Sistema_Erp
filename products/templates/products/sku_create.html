@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurar SKU: {{ reference.nome }} | Gestão ERP{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 40px auto;">
+    <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        
+        <div class="mb-5">
+            <h2 style="font-weight: 800; color: #1e293b; margin-bottom: 8px;">Novo Produto Vendável (SKU)</h2>
+            <p class="text-muted">Defina as cores para cada material da referência: <strong>{{ reference.nome }}</strong></p>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- IDENTIFICAÇÃO BÁSICA -->
+            <div class="row g-4 mb-5 pb-5 border-bottom">
+                <div class="col-md-4">
+                    <label style="display: block; font-weight: 700; color: #475569; margin-bottom: 10px;">Código SKU:</label>
+                    <input type="text" name="sku" placeholder="Ex: SKU-BLUE-P" required 
+                           style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-weight: 600;">
+                </div>
+                <div class="col-md-5">
+                    <label style="display: block; font-weight: 700; color: #475569; margin-bottom: 10px;">Nome Comercial:</label>
+                    <input type="text" name="nome_comercial" placeholder="Ex: Camiseta Slim Azul" 
+                           style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px;">
+                </div>
+                <div class="col-md-3">
+                    <label style="display: block; font-weight: 700; color: #475569; margin-bottom: 10px;">Preço (R$):</label>
+                    <input type="number" name="preco" step="0.01" value="{{ reference.preco|default:'0.00'|stringformat:'.2f' }}" required 
+                           style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-weight: 700; color: #2ecc71;">
+                </div>
+            </div>
+
+            <!-- CONFIGURAÇÃO DE CORES POR PEÇA -->
+            <div class="mb-5">
+                <h4 style="font-weight: 700; color: #334155; margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-palette text-primary"></i> Cores por Peça (Tecidos)
+                </h4>
+                
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #edf2f7;">
+                    <table class="table table-borderless m-0">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; padding-bottom: 15px;">Peça / Detalhe</th>
+                                <th style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; padding-bottom: 15px;">Material Base</th>
+                                <th style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; padding-bottom: 15px;">Seleção de Cor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in ref_items %}
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 15px 0; vertical-align: middle;">
+                                    <strong style="color: #334155;">{{ item.molde_detalhe.nome_original|default:"Geral" }}</strong>
+                                </td>
+                                <td style="padding: 15px 0; vertical-align: middle;">
+                                    <span class="badge bg-white text-dark border shadow-sm">{{ item.material.nome }}</span>
+                                </td>
+                                <td style="padding: 15px 0; vertical-align: middle;">
+                                    {% if item.material.tem_cor %}
+                                    <select name="cor_item_{{ item.id }}" class="form-select border-2" style="border-radius: 8px;">
+                                        <option value="">-- Cor Padrão (Sem Cor) --</option>
+                                        {% for color in cores %}
+                                        <option value="{{ color.id }}">{{ color.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted border">
+                                        <i class="fas fa-info-circle me-1"></i> Sem variação de cor
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-center py-4 text-muted">Nenhum tecido configurado no pai.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CONFIGURAÇÃO DE CORES POR INSUMO -->
+            <div class="mb-5">
+                <h4 style="font-weight: 700; color: #334155; margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-box-open text-primary"></i> Cores por Insumo (Aviamentos)
+                </h4>
+                
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #edf2f7;">
+                    <table class="table table-borderless m-0">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; padding-bottom: 15px;">Insumo</th>
+                                <th style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; padding-bottom: 15px;">Quantidade</th>
+                                <th style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; padding-bottom: 15px;">Seleção de Cor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for insumo in ref_insumos %}
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 15px 0; vertical-align: middle;">
+                                    <strong style="color: #334155;">{{ insumo.material.nome }}</strong>
+                                </td>
+                                <td style="padding: 15px 0; vertical-align: middle;">
+                                    <span class="text-muted">{{ insumo.quantidade }} {{ insumo.material.unidade }}</span>
+                                </td>
+                                <td style="padding: 15px 0; vertical-align: middle;">
+                                    {% if insumo.material.tem_cor %}
+                                    <select name="cor_insumo_{{ insumo.id }}" class="form-select border-2" style="border-radius: 8px;">
+                                        <option value="">-- Cor Padrão (Sem Cor) --</option>
+                                        {% for color in cores %}
+                                        <option value="{{ color.id }}">{{ color.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted border">
+                                        <i class="fas fa-info-circle me-1"></i> Sem variação de cor
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-center py-4 text-muted">Nenhum insumo configurado no pai.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-5">
+                <a href="{% url 'integrated_view' %}?molde_id={{ reference.molde.id }}" class="btn btn-link text-muted" style="text-decoration: none; font-weight: 600;">
+                    <i class="fas fa-times"></i> Cancelar e Voltar
+                </a>
+                <button type="submit" class="btn btn-primary px-5 py-3" style="border-radius: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">
+                    <i class="fas fa-check-circle me-2"></i> Criar Produto (SKU)
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

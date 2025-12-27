@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Clientes | Gestão ERP{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <div class="erp-card">
+        <div class="erp-header">
+            <h1 class="erp-title">Gestão de Clientes</h1>
+            
+            <div class="d-flex gap-3 align-items-center">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="clientSearch" class="search-input" placeholder="Buscar por nome, CPF/CNPJ ou email..." onkeyup="filterClients()">
+                </div>
+                <a href="{% url 'client_create' %}" class="btn-erp-primary">
+                    <i class="fas fa-plus"></i> Novo Cliente
+                </a>
+            </div>
+        </div>
+
+        <div class="erp-table-container">
+            <div class="table-responsive">
+                <table class="erp-table" id="clientTable">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Contato</th>
+                            <th>Documento</th>
+                            <th class="text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>
+                                <div class="client-info">
+                                    <div class="initials-avatar">
+                                        {{ cliente.nome|slice:":2"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="client-name">{{ cliente.nome }}</div>
+                                        <small class="text-muted">Cadastrado em {{ cliente.data_cadastro|date:"d/m/Y" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div><i class="far fa-envelope me-2 text-muted" style="width: 16px;"></i>{{ cliente.email|default:"-" }}</div>
+                                <div><i class="fas fa-phone me-2 text-muted" style="width: 16px;"></i>{{ cliente.telefone|default:"-" }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ cliente.cpf_cnpj|default:"Não informado" }}</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'client_update' cliente.id %}" class="action-link" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'client_delete' cliente.id %}" class="action-link delete" title="Excluir">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <i class="fas fa-users fa-3x mb-3" style="opacity: 0.2;"></i>
+                                    <p>Nenhum cliente encontrado.</p>
+                                    <a href="{% url 'client_create' %}" class="btn btn-sm btn-outline-primary mt-2">Cadastrar Primeiro Cliente</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterClients() {
+        var input, filter, table, tr, td, i, j, txtValue, found;
+        input = document.getElementById("clientSearch");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("clientTable");
+        tr = table.getElementsByTagName("tr");
+
+        for (i = 1; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td");
+            found = false;
+            for (j = 0; j < td.length - 1; j++) {
+                if (td[j]) {
+                    txtValue = td[j].textContent || td[j].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (found) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+</script>
+{% endblock %}

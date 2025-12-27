@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Entrada de Estoque{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #2980b9; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        select, input[type="text"], input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn { padding: 10px 15px; background: #2980b9; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background: #2471a3; }
+        .cancel-btn { background: #95a5a6; margin-left: 10px; text-decoration: none; display: inline-block; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Registrar Entrada de Material</h1>
+        <p>Informe a quantidade na <strong>unidade de compra</strong> (ex: Metros).</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <small style="color: grey;">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}
+                <div style="color: red;">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn">Confirmar Entrada</button>
+            <a href="{% url 'movement_list' %}" class="btn cancel-btn">Cancelar</a>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurar Pedido{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 800px; margin: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f9f9f9; }
+        select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .actions { margin-top: 20px; text-align: right; }
+        button { padding: 10px 25px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #2980b9; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Configurar Pedido</h1>
+        <p><strong>Item:</strong> {{ item.quantidade }}x {{ item.molde.nome }}</p>
+        <p><strong>Cliente:</strong> {{ item.pedido.cliente }}</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Peça</th>
+                        <th>Tecido</th>
+                        <th>Cor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pieces_data %}
+                    <tr>
+                        <td>{{ item.piece.nome_original }} ({{ item.piece.qtd_padrao }}x)</td>
+                        <td>
+                            <select name="tecido_{{ item.piece.id }}" required>
+                                <option value="">Selecione...</option>
+                                {% for tecido in tecidos %}
+                                    <option value="{{ tecido.id }}" 
+                                        {% if item.config and item.config.tecido_id == tecido.id %}selected{% endif %}>
+                                        {{ tecido.nome }} ({{ tecido.largura_padrao_mm }}mm)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="cor_{{ item.piece.id }}" required>
+                                <option value="">Selecione...</option>
+                                {% for cor in cores %}
+                                    <option value="{{ cor.id }}" style="background-color: {{ cor.hex_code }};"
+                                    {% if item.config and item.config.cor_id == cor.id %}selected{% endif %}>
+                                        {{ cor.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="actions">
+                <button type="submit">Salvar e Visualizar Encaixe</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

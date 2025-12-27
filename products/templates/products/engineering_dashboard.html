@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Engenharia - Cadastro Técnico{% endblock %}
+
+{% block extra_head %}
+<!-- Reusing ERP styles from Order Form if possible, or simple table styles -->
+<style>
+    /* Industrial ERP Style */
+    .k-header { background-color: #2c3e50; color: white; padding: 1.5rem; border-radius: 4px; margin-bottom: 2rem; border-left: 6px solid #34495e; }
+    
+    .panel-queue { border-top: 5px solid #e67e22; } /* Pending Queue Color */
+    .panel-running { border-top: 5px solid #2980b9; } /* Running Process Color */
+    
+    .k-card { background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 1.5rem; margin-bottom: 2rem; }
+    
+    .table-clean { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .table-clean th { text-align: left; padding: 0.8rem; border-bottom: 2px solid #ccc; color: #333; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; background: #f8f9fa; }
+    .table-clean td { padding: 0.8rem; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .table-clean tr:hover { background-color: #f1f2f6; }
+
+    /* Badge Styles */
+    .status-badge { padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; }
+    .status-PENDENTE_CADASTRO { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* Mapped to visual PENDENTE_CADASTRO_TECNICO */
+    .status-ABERTA { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; } /* Mapped to EM_ANALISE_TECNICA */
+
+    .btn-create-os { background-color: #e67e22; color: white; padding: 0.8rem 2rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem; text-transform: uppercase; }
+    .btn-create-os:hover { background-color: #d35400; }
+    
+    .btn-action-small { background-color: #2980b9; color: white; padding: 4px 12px; border-radius: 3px; text-decoration: none; font-size: 0.8rem; font-weight: bold; }
+    .btn-action-small:hover { background-color: #1c6ea4; }
+    
+    .section-title { font-size: 1.1rem; color: #555; font-weight: bold; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem; }
+    .section-desc { color: #888; font-size: 0.9rem; margin-bottom: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+    
+    <div class="k-header">
+        <h2 style="margin:0; font-size: 1.5rem;">Engenharia de Produto</h2>
+        <p style="margin:0; opacity:0.8; font-size: 0.9rem;">Controle e Cadastro Técnico Industrial</p>
+    </div>
+
+    <!-- PENDENCIAS -->
+    <!-- PENDENCIAS (FILA DE TRABALHO) -->
+    <div class="k-card panel-queue">
+        <div class="section-title">
+            <span style="width: 10px; height: 10px; background: #e67e22; display: inline-block; border-radius: 50%;"></span>
+            Fila de Pendências Técnicas ({{ pending_items.count }})
+        </div>
+        <p class="section-desc">Itens comerciais aguardando definição de engenharia. Selecione para iniciar o processo.</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <table class="table-clean">
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" onclick="toggleAll(this)"></th>
+                        <th>Pedido</th>
+                        <th>Cliente</th>
+                        <th>Descrição Comercial</th>
+                        <th>Quantidade</th>
+                        <th>Status Técnico</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pending_items %}
+                    <tr>
+                        <td><input type="checkbox" name="selected_items" value="{{ item.id }}"></td>
+                        <td><strong>#{{ item.pedido.id }}</strong></td>
+                        <td>{{ item.pedido.cliente }}</td>
+                        <td>
+                            <!-- DESCRIÇÃO COMERCIAL: Oculta Produto Técnico/SKU -->
+                            {% if item.produto.nome_comercial %}
+                                {{ item.produto.nome_comercial }}
+                            {% elif item.produto %}
+                                <!-- Fallback se não tiver nome comercial mas tiver produto vinculado na venda -->
+                                Item Solicitado: {{ item.produto.produto_referencia.nome }} ({{ item.produto.sku|default:"S/ SKU" }})
+                            {% elif item.molde %}
+                                Molde Ref: {{ item.molde.nome }}
+                            {% else %}
+                                <span style="color: #999; font-style: italic;">Item Genérico / A Definir</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.quantidade }} pçs</td>
+                        <td>
+                            <!-- Mapping Backend Status to Frontend Display -->
+                            {% if item.status == 'PENDENTE_CADASTRO' %}
+                                <span class="status-badge status-PENDENTE_CADASTRO">PENDENTE CADASTRO TÉCNICO</span>
+                            {% else %}
+                                <span class="status-badge">{{ item.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding: 3rem; color: #999;">
+                            Na fila: 0 itens.<br>
+                            Todos os pedidos estão processados.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            {% if pending_items %}
+            <div style="margin-top: 1.5rem; text-align: right; background: #f9f9f9; padding: 1rem; border-top: 1px solid #eee;">
+                <button type="submit" class="btn-create-os">Criar OS de Cadastro Técnico</button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- OS ABERTAS -->
+    <!-- OS EM ANDAMENTO (PROCESSOS) -->
+    <div class="k-card panel-running">
+        <div class="section-title">
+            <span style="width: 10px; height: 10px; background: #2980b9; display: inline-block; border-radius: 50%;"></span>
+            Ordens de Serviço em Andamento
+        </div>
+        <p class="section-desc">Processos de cadastro técnico iniciados e aguardando conclusão.</p>
+
+        <table class="table-clean">
+            <thead>
+                <tr>
+                    <th>OS #</th>
+                    <th>Data Abertura</th>
+                    <th>Escopo</th>
+                    <th>Status Processo</th>
+                    <th style="text-align: right;">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for os in open_os %}
+                <tr>
+                    <td><strong>{{ os.id }}</strong></td>
+                    <td>{{ os.data_criacao|date:"d/m/Y H:i" }}</td>
+                    <td>{{ os.itens.count }} itens vinculados</td>
+                    <td><span class="status-badge status-{{ os.status }}">EM ANÁLISE TÉCNICA</span></td>
+                    <td style="text-align: right;">
+                        <a href="{% url 'os_detail' os.id %}" class="btn-action-small">Abrir OS Técnica &rarr;</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding: 2rem; color: #999;">Nenhuma OS em andamento.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function toggleAll(source) {
+        checkboxes = document.getElementsByName('selected_items');
+        for(var i=0, n=checkboxes.length;i<n;i++) {
+            checkboxes[i].checked = source.checked;
+        }
+    }
+</script>
+{% endblock %}

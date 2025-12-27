@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Catálogo de Moldes | Gestão ERP{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <div class="erp-card">
+        <div class="erp-header">
+            <div>
+                <h1 class="erp-title">Catálogo de Moldes</h1>
+                <p class="text-muted small mb-0">Controle técnico de geometrias e arquivos originais.</p>
+            </div>
+            <a href="{% url 'molde_import' %}" class="btn-erp-primary">
+                <i class="fas fa-file-import"></i> Importar Molde
+            </a>
+        </div>
+
+        <div class="px-4 py-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="moldeSearch" class="search-input" placeholder="Buscar moldes..." onkeyup="filterMolds()">
+            </div>
+            <div class="text-muted small">
+                <b>{{ moldes.count }}</b> moldes no acervo
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="erp-table" id="moldeTable">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Visual</th>
+                        <th>Identificação do Molde</th>
+                        <th>Extensão / Dados</th>
+                        <th>Data de Importação</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in moldes %}
+                    <tr>
+                        <td>
+                            {% if m.imagem %}
+                                <img src="{{ m.imagem.url }}" class="molde-thumb">
+                            {% else %}
+                                <div class="molde-icon-placeholder">
+                                    <i class="fas fa-shapes"></i>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="font-weight-bold text-dark">{{ m.nome }}</div>
+                            <small class="text-muted">ID: #{{ m.id }}</small>
+                        </td>
+                        <td>
+                            <span class="count-badge">
+                                <i class="fas fa-layer-group me-1"></i> {{ m.detalhes.count }} Peças
+                            </span>
+                        </td>
+                        <td>
+                            <div class="small">{{ m.data_criacao|date:"d/m/Y" }}</div>
+                            <div class="text-muted small">{{ m.data_criacao|date:"H:i" }}</div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a href="{% url 'molde_detail' m.id %}" class="action-link" title="Ver Detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'product_create' m.id %}" class="action-link" style="color: #38a169;" title="Criar Referência">
+                                    <i class="fas fa-plus-circle"></i>
+                                </a>
+                                <form action="{% url 'molde_delete' m.id %}" method="POST" style="display:inline" onsubmit="return confirm('EXCLUIR MOLDE DEFINITIVAMENTE?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="action-link delete" style="border:none; background:none;">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fas fa-folder-open fa-3x mb-3 opacity-25"></i>
+                            <p>Nenhum molde cadastrado no sistema.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterMolds() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("moldeSearch");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("moldeTable");
+        tr = table.getElementsByTagName("tr");
+        for (i = 1; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[1];
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+</script>
+{% endblock %}

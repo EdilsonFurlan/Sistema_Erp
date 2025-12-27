@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerar Ordem de Compra{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { background: white; padding: 25px; border-radius: 8px; max-width: 900px; margin: auto; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f8f9fa; color: #666; font-weight: 600; }
+        
+        .warn { color: #e74c3c; font-weight: bold; }
+        .ok { color: #27ae60; }
+        
+        .btn { display: inline-block; padding: 12px 24px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; text-decoration: none; font-weight: bold; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #219150; }
+        .btn-link { background: none; color: #7f8c8d; padding: 12px; }
+        
+        .actions { margin-top: 30px; text-align: right; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Conferência de Materiais</h1>
+        <p>Resumo dos materiais necessários para os <strong>{{ orders.count }} pedidos</strong> selecionados.</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Cor</th>
+                    <th>Necessidade</th>
+                    <th>Estoque Atual</th>
+                    <th>Comprar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% load custom_filters %}
+                {% for item in preview_list %}
+                <tr>
+                    <td>{{ item.material.nome }}</td>
+                    <td>{{ item.cor.nome|default:"-" }}</td>
+                    <td>{{ item.qtd_needed|format_unit:item.material }} {{ item.material.unidade }}</td>
+                    <td>{{ item.current_stock|format_unit:item.material }} {{ item.material.unidade }}</td>
+                    <td>
+                        <span class="{% if item.to_buy > 0 %}warn{% else %}ok{% endif %}">
+                            {{ item.to_buy|format_unit:item.material }} {{ item.material.unidade }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <form action="{% url 'purchase_order_create' %}" method="POST" class="actions">
+            {% csrf_token %}
+            <input type="hidden" name="selected_ids" value="{{ selected_ids }}">
+            
+            <a href="{% url 'purchase_planning' %}" class="btn btn-link">Cancelar e Voltar</a>
+            <button type="submit" class="btn btn-success">Confirmar e Gerar OC</button>
+        </form>
+    </div>
+{% endblock %}

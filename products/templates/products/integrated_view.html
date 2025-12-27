@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Produtos | Gestão ERP{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block breadcrumb %}
+    <i class="fas fa-chevron-right text-muted me-2"></i>
+    <span>Gestão de Produtos</span>
+    {% if selected_molde %}
+        <i class="fas fa-chevron-right text-muted me-2 ms-2"></i>
+        <span class="text-primary font-weight-bold">{{ selected_molde.nome }}</span>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="integrated-container p-4">
+    
+    <!-- TOP FILTER BAR -->
+    <div class="filter-card p-4 bg-white rounded-3 shadow-sm border mb-4 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-4">
+            <div class="filter-group">
+                <label class="filter-label mb-2 d-block">Filtrar por Molde</label>
+                <select id="moldeFilter" class="select-erp" style="width: 300px;" onchange="window.location.href='?molde_id=' + this.value">
+                    <option value="all" {% if selected_molde_id == 'all' %}selected{% endif %}>Todos os Moldes</option>
+                    {% for m in moldes %}
+                    <option value="{{ m.id }}" 
+                            {% if selected_molde.id == m.id %}selected{% endif %}
+                            data-img="{% if m.imagem %}{{ m.imagem.url }}{% else %}/static/img/no-image.png{% endif %}">
+                        {{ m.nome }} ({{ m.ref_count }} Ref)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="stats-mini d-flex gap-4 border-start ps-4">
+                <div>
+                    <div class="text-muted small uppercase font-weight-bold">Total Referências</div>
+                    <div class="h4 mb-0 font-weight-bold">{{ referencias_data|length }}</div>
+                </div>
+                {% if selected_molde %}
+                <div>
+                    <div class="text-muted small uppercase font-weight-bold">Peças Técnicas</div>
+                    <div class="h4 mb-0 font-weight-bold text-primary">{{ selected_molde.detalhes.count }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            {% if selected_molde %}
+                <a href="{% url 'product_create' selected_molde.id %}" hx-boost="false" class="btn-erp btn-erp-primary shadow-sm" style="background: #3182ce; color: white; padding: 12px 24px;">
+                    <i class="fas fa-plus"></i> NOVA REFERÊNCIA / FICHA
+                </a>
+            {% else %}
+                <button class="btn btn-light" disabled title="Selecione um molde para criar nova referência">
+                    <i class="fas fa-plus"></i> Nova Referência
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- MAIN LISTING AREA -->
+    <!-- MAIN LISTING AREA -->
+    <div class="workspace-main p-0 shadow-sm border rounded" id="workspace-content" style="height: calc(100vh - 180px); overflow: hidden;">
+        <div class="d-flex h-100">
+            <!-- LEFT COLUMN: REFERENCE LIST -->
+            <div id="list-column" class="flex-grow-1 h-100 overflow-auto" style="background: #f8fafc; transition: all 0.3s ease;">
+        {% if referencias_data %}
+            <div class="p-3 mb-0 d-flex justify-content-between align-items-center bg-white border-bottom sticky-top">
+                <h5 class="font-weight-bold text-muted uppercase small mb-0" style="letter-spacing: 0.1em;">Referências / Fichas Técnicas Ativas (Flex)</h5>
+            </div>
+
+            <div class="bg-white">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light sticky-top" style="top: 0; z-index: 5;">
+                        <tr>
+                            <th style="border-top: 0; font-size: 11px; text-transform: uppercase; color: #64748b; padding-left: 24px;">Peça / Molde</th>
+                            <th style="border-top: 0; font-size: 11px; text-transform: uppercase; color: #64748b;">Referência (Ficha)</th>
+                            <th style="border-top: 0; font-size: 11px; text-transform: uppercase; color: #64748b;">Custo de Eng.</th>
+                            <th style="border-top: 0; font-size: 11px; text-transform: uppercase; color: #64748b; width: 180px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in referencias_data %}
+                        <tr style="cursor: pointer;" 
+                            hx-get="{% url 'get_ref_variants' r.id %}" 
+                            hx-target="#side-panel-content" 
+                            hx-swap="innerHTML"
+                            onclick="openSidePanel(this)">
+                            
+                            <td style="padding-left: 24px; vertical-align: middle;">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if r.molde.imagem %}
+                                        <img src="{{ r.molde.imagem.url }}" class="rounded shadow-sm border" style="width: 48px; height: 48px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 48px; height: 48px; color: #cbd5e1;">
+                                            <i class="fas fa-shapes"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="font-weight-bold text-dark">{{ r.molde.nome }}</div>
+                                        <small class="text-muted">{{ r.molde.detalhes.count }} peças</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <div class="font-weight-bold" style="font-size: 1.1rem; color: #3182ce;">{{ r.nome }}</div>
+                                {% if r.eh_padrao %}<span class="badge border border-warning text-warning" style="font-size: 10px;">PADRÃO</span>{% endif %}
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <div class="font-weight-bold text-dark">R$ {{ r.custo_estimado|floatformat:2 }}</div>
+                                <div class="text-primary small" style="cursor: pointer;">
+                                    <i class="fas fa-eye me-1"></i> {{ r.skus.count }} variantes
+                                </div>
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <a href="{% url 'sku_create' r.id %}" hx-boost="false" class="btn btn-sm btn-outline-success ms-2" title="Adicionar Cor / SKU" onclick="event.stopPropagation();">
+                                    <i class="fas fa-palette"></i> Add Cor
+                                </a>
+                                <a href="{% url 'product_detail' r.id %}" hx-boost="false" class="btn btn-sm btn-outline-primary" title="Editar Ficha Técnica" onclick="event.stopPropagation();">
+                                    <i class="fas fa-edit"></i> Ficha
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+            </div> <!-- CLOSE LEFT FLEX ITEM -->
+
+            <!-- RIGHT COLUMN: SIDE PANEL (FIXED WIDTH) -->
+            <div id="side-panel-wrapper" class="h-100 bg-white border-start shadow-sm d-none" style="width: 400px; flex-shrink: 0; z-index: 999; transition: width 0.3s ease;">
+                <div id="side-panel-content" class="h-100 overflow-auto">
+                    <!-- HTMX will load content here -->
+                    <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- CLOSE FLEX ROW -->
+    </div> <!-- CLOSE WORKSPACE -->
+</div> <!-- CLOSE CONTAINER -->
+
+<script>
+    function openSidePanel(rowElement) {
+        // 1. Highlight Row
+        document.querySelectorAll('tr').forEach(tr => tr.classList.remove('table-active'));
+        if(rowElement) rowElement.classList.add('table-active');
+
+        // 2. Adjust Layout (Simple show/hide)
+        const panelCol = document.getElementById('side-panel-wrapper');
+        // Just show it. Flexbox handles the rest (Left col shrinks, Right col takes 400px).
+        panelCol.classList.remove('d-none');
+    }
+
+    $(document).ready(function() {
+        function formatOption(state) {
+            if (!state.id || state.id === 'all') return state.text;
+            var imgUrl = $(state.element).data('img');
+            return $(
+                '<div class="d-flex align-items-center gap-2">' +
+                    '<img src="' + imgUrl + '" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;" />' +
+                    '<span>' + state.text + '</span>' +
+                '</div>'
+            );
+        }
+
+        $('#moldeFilter').select2({
+            templateResult: formatOption,
+            templateSelection: formatOption
+        });
+    });
+</script>
+{% endblock %}

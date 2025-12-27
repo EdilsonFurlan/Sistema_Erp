@@ -1,0 +1,482 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Criar Ordem de Produção - Gestão ERP{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right text-muted me-2"></i>
+<a href="{% url 'op_list' %}" class="text-muted text-decoration-none">Produção</a>
+<i class="fas fa-chevron-right text-muted mx-2"></i>
+<span>Nova Ordem de Produção</span>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .op-creation-layout {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 24px;
+        align-items: flex-start;
+    }
+
+    /* List Area */
+    .items-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .group-header {
+        background: #f8fafc;
+        padding: 12px 20px;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    .group-items {
+        padding: 0;
+    }
+
+    .item-row {
+        display: grid;
+        grid-template-columns: 40px 80px 1fr 180px 1.2fr 80px 100px 130px;
+        padding: 12px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        align-items: center;
+        transition: background 0.2s;
+    }
+
+    .item-row:hover {
+        background: #fcfdfe;
+    }
+
+    /* Status Styles */
+    .status-pendente_cadastro { background: #fffcf0; }
+    .status-liberado_producao { background: #f0f7ff; }
+    
+    .status-em_producao {
+        background: #f0fff4 !important; /* light green */
+    }
+    .status-em_producao .item-op-link {
+        font-size: 11px;
+        color: #2f855a;
+        font-weight: 600;
+        display: block;
+    }
+
+    .status-concluido {
+        background: #f7fafc !important; /* light grey */
+        color: #a0aec0;
+    }
+
+    .status-cancelado {
+        background: #fff5f5 !important; /* light red */
+    }
+
+    /* Summary Panel */
+    .summary-panel {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        padding: 24px;
+        position: sticky;
+        top: 84px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #1a202c;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .summary-stat {
+        margin-bottom: 24px;
+    }
+
+    .summary-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #718096;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .summary-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #2d3748;
+    }
+
+    .selected-products-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border-top: 1px solid #edf2f7;
+        padding-top: 16px;
+    }
+
+    .selected-product-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 13px;
+    }
+
+    .alert-production {
+        background: #fffaf0;
+        border-left: 4px solid #ed8936;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        color: #7b341e;
+        display: none; /* Shown via JS */
+    }
+
+    /* Controls Custom UI */
+    .view-selector {
+        display: inline-flex;
+        background: #edf2f7;
+        padding: 4px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+    }
+
+    .view-option {
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        color: #4a5568;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .view-option.active {
+        background: white;
+        color: #3182ce;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn-create-op {
+        width: 100%;
+        background: #3182ce;
+        color: white;
+        padding: 14px;
+        border-radius: 10px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .btn-create-op:hover {
+        background: #2b6cb0;
+    }
+
+    .btn-create-op:disabled {
+        background: #cbd5e0;
+        cursor: not-allowed;
+    }
+
+    .filters-bar {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .filter-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .filter-item label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #718096;
+        text-transform: uppercase;
+    }
+
+    .filter-item select, .filter-item input {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        outline: none;
+        font-size: 13px;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<form id="opForm" action="{% url 'create_op_bulk' %}" method="POST">
+    {% csrf_token %}
+    
+    <div class="erp-header">
+        <div>
+            <h1>Gerar Ordem de Produção</h1>
+            <p class="text-muted">Selecione itens liberados para iniciar um novo lote de fabricação.</p>
+        </div>
+        
+        <div class="view-selector">
+            <a href="?view_mode=pedido&status={{ status_filter }}" class="view-option {% if view_mode == 'pedido' %}active{% endif %}">
+                <i class="fas fa-file-invoice me-1"></i> Agrupar por Pedido
+            </a>
+            <a href="?view_mode=produto&status={{ status_filter }}" class="view-option {% if view_mode == 'produto' %}active{% endif %}">
+                <i class="fas fa-box me-1"></i> Agrupar por Produto
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-bar">
+        <div class="filter-item" style="flex: 1;">
+            <label>Filtrar por Status</label>
+            <select name="status_filter" onchange="window.location.href='?view_mode={{ view_mode }}&status=' + this.value">
+                <option value="PENDENTE" {% if status_filter == 'PENDENTE' %}selected{% endif %}>Pendente (Pronto p/ Produção)</option>
+                <option value="EM_PRODUCAO" {% if status_filter == 'EM_PRODUCAO' %}selected{% endif %}>Em Produção</option>
+                <option value="CONCLUIDO" {% if status_filter == 'CONCLUIDO' %}selected{% endif %}>Produzido</option>
+                <option value="CANCELADO" {% if status_filter == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                <option value="" {% if not status_filter %}selected{% endif %}>Todos</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label>Período</label>
+            <input type="date" placeholder="De">
+        </div>
+        <div class="filter-item">
+            <label>Cliente</label>
+            <input type="text" placeholder="Nome do cliente...">
+        </div>
+        <div class="filter-item">
+            <button type="button" class="btn-erp btn-secondary-erp" style="margin-top: 18px;">
+                <i class="fas fa-filter"></i> Filtrar
+            </button>
+        </div>
+    </div>
+
+    <div class="op-creation-layout">
+        <!-- Lista de Itens -->
+        <div class="items-card">
+            {% for group, items in grouped_data.items %}
+            <div class="group-container">
+                <div class="group-header">
+                    <span>
+                        {% if view_mode == 'pedido' %}
+                            <i class="fas fa-file-invoice text-primary me-2"></i> {{ group }}
+                        {% else %}
+                            {% with group_molde=group.molde|default:group %}
+                                {% if group_molde.imagem %}
+                                    <img src="{{ group_molde.imagem.url }}" class="molde-thumb-table" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">
+                                {% else %}
+                                    <i class="fas fa-box text-primary me-2"></i>
+                                {% endif %}
+                                {{ group }}
+                            {% endwith %}
+                        {% endif %}
+                    </span>
+                    <span class="count-badge">{{ items|length }} itens</span>
+                </div>
+                <div class="group-items">
+                    <!-- Column Headers -->
+                    <div class="item-row" style="background: #fcfdfe; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #94a3b8; border-bottom: 1px solid #e2e8f0;">
+                        <div></div>
+                        <div>Pedido</div>
+                        <div>Cliente</div>
+                        <div>Molde / Base</div>
+                        <div>Produto / Referência</div>
+                        <div style="text-align: center;">Qtd</div>
+                        <div>Prazo</div>
+                        <div>Status</div>
+                    </div>
+                    
+                    {% for item in items %}
+                    <div class="item-row status-{{ item.status|lower }}">
+                        <div>
+                            {% if item.status == 'LIBERADO_PRODUCAO' or item.status == 'PENDENTE_CADASTRO' %}
+                                <input type="checkbox" name="items" value="{{ item.id }}" 
+                                       data-product="{{ item.produto.nome|default:item.molde.nome }}"
+                                       data-product-id="{{ item.produto.id|default:item.molde.id }}"
+                                       data-qty="{{ item.quantidade }}"
+                                       onchange="updateSummary()">
+                            {% else %}
+                                <input type="checkbox" disabled>
+                            {% endif %}
+                        </div>
+                        <div style="font-weight: 600;">#{{ item.pedido.id }}</div>
+                        <div class="text-truncate">{{ item.pedido.cliente_cadastro.nome|default:item.pedido.cliente }}</div>
+                        
+                        <!-- Molde Column -->
+                        <div class="d-flex align-items-center overflow-hidden">
+                            {% if item.molde.imagem %}
+                                <img src="{{ item.molde.imagem.url }}" class="molde-thumb-table" style="width: 32px; height: 32px; margin-right: 8px; flex-shrink: 0;">
+                            {% elif item.produto.molde.imagem %}
+                                <img src="{{ item.produto.molde.imagem.url }}" class="molde-thumb-table" style="width: 32px; height: 32px; margin-right: 8px; flex-shrink: 0;">
+                            {% else %}
+                                <div class="molde-icon-placeholder" style="width: 32px; height: 32px; font-size: 0.7rem; margin-right: 8px; flex-shrink: 0;"><i class="fas fa-shapes"></i></div>
+                            {% endif %}
+                            <span class="text-truncate" title="{{ item.molde.nome|default:item.produto.molde.nome }}">
+                                {{ item.molde.nome|default:item.produto.molde.nome }}
+                            </span>
+                        </div>
+
+                        <div style="font-weight: 500;">
+                            {{ item.produto.nome|default:item.molde.nome }}
+                            <small class="text-muted d-block">{{ item.produto.referencia|default:'' }}</small>
+                        </div>
+                        <div style="text-align: center; font-weight: 700;">{{ item.quantidade }}</div>
+                        <div>
+                            {% if item.pedido.data_entrega %}
+                                {{ item.pedido.data_entrega|date:"d/m/Y" }}
+                            {% else %}
+                                ---
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if item.status == 'LIBERADO_PRODUCAO' %}
+                                <span class="badge" style="background: #ebf8ff; color: #3182ce;">Pendente Prod.</span>
+                            {% elif item.status == 'PENDENTE_CADASTRO' %}
+                                <span class="badge" style="background: #fffbe6; color: #d48806;">Pendente Técnico</span>
+                            {% elif item.status == 'EM_PRODUCAO' %}
+                                <span class="badge" style="background: #c6f6d5; color: #22543d;">Em Produção</span>
+                                <span class="item-op-link">OP #{{ item.producoes.first.op.id }}</span>
+                            {% elif item.status == 'CONCLUIDO' %}
+                                <span class="badge" style="background: #edf2f7; color: #4a5568;">Produzido</span>
+                            {% elif item.status == 'CANCELADO' %}
+                                <span class="badge" style="background: #fed7d7; color: #822727;">Cancelado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fas fa-search fa-3x mb-3"></i>
+                <p>Nenhum item encontrado com o filtro selecionado.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Painel Lateral -->
+        <aside class="summary-panel">
+            <div class="summary-title">
+                <i class="fas fa-clipboard-list text-primary"></i>
+                Resumo da OP
+            </div>
+
+            <div id="alertProd" class="alert-production">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span id="alertProdMsg"></span>
+            </div>
+
+            <div class="summary-stat">
+                <div class="summary-label">Total de Peças Selecionadas</div>
+                <div id="totalQty" class="summary-value">0</div>
+            </div>
+
+            <div class="summary-label">Produtos Selecionados</div>
+            <ul id="selectedProductsList" class="selected-products-list">
+                <li class="text-muted" style="font-style: italic; font-size: 13px;">Nenhum produto selecionado</li>
+            </ul>
+
+            <button type="submit" id="btnCreate" class="btn-create-op" disabled>
+                <i class="fas fa-plus-circle"></i>
+                Criar Ordem de Produção
+            </button>
+            <p class="text-muted mt-3" style="font-size: 11px; text-align: center;">
+                Uma OP será gerada para cada produto distinto selecionado.
+            </p>
+        </aside>
+    </div>
+</form>
+
+<script>
+    // Data from server about items in production
+    const inProduction = {{ products_in_production_json|safe }};
+
+    function updateSummary() {
+        const checkboxes = document.querySelectorAll('input[name="items"]:checked');
+        const totalQtyElement = document.getElementById('totalQty');
+        const productListElement = document.getElementById('selectedProductsList');
+        const btnCreate = document.getElementById('btnCreate');
+        const alertProd = document.getElementById('alertProd');
+        const alertProdMsg = document.getElementById('alertProdMsg');
+
+        let totalQty = 0;
+        let productsMap = {};
+        let productIds = new Set();
+
+        checkboxes.forEach(cb => {
+            const qty = parseInt(cb.dataset.qty);
+            const name = cb.dataset.product;
+            const pid = cb.dataset.productId;
+            
+            totalQty += qty;
+            productIds.add(pid);
+
+            if (productsMap[name]) {
+                productsMap[name] += qty;
+            } else {
+                productsMap[name] = qty;
+            }
+        });
+
+        // Update Qty
+        totalQtyElement.innerText = totalQty;
+
+        // Update Products List
+        if (checkboxes.length > 0) {
+            productListElement.innerHTML = '';
+            for (const [name, qty] of Object.entries(productsMap)) {
+                const li = document.createElement('li');
+                li.className = 'selected-product-item';
+                li.innerHTML = `<span>${name}</span> <b>${qty} un</b>`;
+                productListElement.appendChild(li);
+            }
+            btnCreate.disabled = false;
+        } else {
+            productListElement.innerHTML = '<li class="text-muted" style="font-style: italic; font-size: 13px;">Nenhum produto selecionado</li>';
+            btnCreate.disabled = true;
+        }
+
+        // Check for "Already in production" alert
+        let productionAlerts = [];
+        productIds.forEach(pid => {
+            if (inProduction[pid]) {
+                const info = inProduction[pid];
+                productionAlerts.push(`Existem <b>${info.qty} unidades</b> deste produto já em produção (OP #${info.op_id}).`);
+            }
+        });
+
+        if (productionAlerts.length > 0) {
+            alertProd.style.display = 'block';
+            alertProdMsg.innerHTML = productionAlerts[0] + ' Deseja continuar criando uma nova OP apenas para o saldo pendente?';
+        } else {
+            alertProd.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

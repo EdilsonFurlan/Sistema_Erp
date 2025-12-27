@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}PCP - Planejamento de Produção{% endblock %}
+
+{% block extra_head %}
+<!-- Kanban style cards -->
+<style>
+    .pcp-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+    .kanban-board { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+    .kanban-card { 
+        background: white; 
+        border: 1px solid #ccc; 
+        border-top: 5px solid #3498db; 
+        border-radius: 6px; 
+        width: 350px; 
+        padding: 1.5rem; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+    }
+    .card-header { margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+    .card-title { font-size: 1.1rem; font-weight: bold; color: #2c3e50; }
+    .card-subtitle { color: #7f8c8d; font-size: 0.9rem; }
+    
+    .item-list-mini { list-style: none; padding: 0; margin: 1rem 0; flex-grow: 1; }
+    .item-list-mini li { font-size: 0.9rem; padding: 0.4rem 0; border-bottom: 1px dashed #eee; display: flex; justify-content: space-between; }
+    
+    .btn-generate-op { 
+        background-color: #3498db; 
+        color: white; 
+        width: 100%; 
+        padding: 0.8rem; 
+        border: none; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        margin-top: auto;
+    }
+    .btn-generate-op:hover { background-color: #2980b9; }
+
+    .empty-state { width: 100%; text-align: center; padding: 4rem; color: #95a5a6; background: #f8f9fa; border-radius: 8px; border: 2px dashed #dcdcdc; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pcp-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1>Planejamento e Controle de Produção (PCP)</h1>
+        <a href="{% url 'op_list' %}" style="background: #2c3e50; color: white; padding: 0.6rem 1.2rem; text-decoration: none; border-radius: 4px;">Ver OPs Existentes</a>
+    </div>
+
+    <h3 style="color: #16a085;">Itens Liberados para Produção</h3>
+    <p style="margin-bottom: 2rem; color: #666;">Os itens abaixo já foram validados pela engenharia e estão prontos para virar Ordem de Produção (OP).</p>
+
+    {% if grouped_items %}
+        <div class="kanban-board">
+            {% for sku_id, group in grouped_items.items %}
+            <div class="kanban-card">
+                <div class="card-header" style="display: flex; gap: 12px; align-items: flex-start;">
+                    {% if group.product.molde.imagem %}
+                        <img src="{{ group.product.molde.imagem.url }}" style="width: 48px; height: 48px; border-radius: 4px; object-fit: cover; border: 1px solid #eee;">
+                    {% else %}
+                        <div style="width: 48px; height: 48px; border-radius: 4px; background: #f0f7ff; color: #3182ce; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-shapes"></i>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="card-title">{{ group.product.nome|default:group.product.parent.nome }}</div>
+                        <div class="card-subtitle">
+                            {% if group.product.cor %}
+                                {{ group.product.cor.nome }} 
+                            {% else %}
+                                Padrão
+                            {% endif %}
+                            (SKU: {{ group.product.sku }})
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 2rem; font-weight: bold; color: #34495e; text-align: center; margin: 1rem 0;">
+                    {{ group.total_qty }} <span style="font-size: 1rem; color: #7f8c8d;">peças</span>
+                </div>
+                
+                <ul class="item-list-mini">
+                    {% for item in group.items %}
+                    <li>
+                        <span>Pedido #{{ item.pedido.id }}</span>
+                        <span>{{ item.quantidade }} pçs</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                
+                <form method="post" action="{% url 'create_op' sku_id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-generate-op">Gerar Ordem de Produção</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h2>Nenhum item liberado para produção</h2>
+            <p>Os itens aparecem aqui somente após serem liberados na Engenharia/Vendas.</p>
+            <p style="margin-top: 1rem;">
+                <i class="fas fa-info-circle"></i>
+                Vá em <a href="{% url 'order_list' %}" style="color: #3498db; font-weight: bold;">Vendas > Pedidos</a>, 
+                entre nos detalhes de um pedido e clique no botão <span style="background: #27ae60; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.9em;">🚀 Liberar</span>.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

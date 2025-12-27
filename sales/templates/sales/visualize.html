@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}Visualização de Encaixe{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .controls { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .canvas-container { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow-x: auto; }
+        canvas { border: 1px solid #ddd; background: #fafafa; }
+        .stats { margin-top: 10px; font-weight: bold; }
+        h1 { color: #333; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Visualização de Encaixe</h1>
+
+    <div class="controls">
+        <label>Quantidade de Itens: <input type="number" id="qtyInput" value="{{ quantity }}"></label>
+        <label>Largura do Tecido (mm): <input type="number" id="widthInput" value="{{ fabric_width }}"></label>
+        <button onclick="updateVisualization()">Recalcular</button>
+        <div id="stats" class="stats"></div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="nestingCanvas"></canvas>
+    </div>
+
+    <script>
+        const rawData = {{ json_data|safe }};
+        const colorMapping = {
+            "Corpo Frente Costa": "#e74c3c", // Red
+            "Fundo": "#3498db", // Blue
+            "Emenda Corpo": "#e74c3c",
+            "Fole Corpo": "#e74c3c"
+        };
+        const defaultColor = "#95a5a6"; // Grey
+
+        function updateVisualization() {
+            const qty = parseInt(document.getElementById('qtyInput').value);
+            const fabricWidth = parseInt(document.getElementById('widthInput').value);
+            const canvas = document.getElementById('nestingCanvas');
+            const ctx = canvas.getContext('2d');
+            const scale = 0.2; // Scale down for viewing (1px = 5mm)
+
+            canvas.width = fabricWidth * scale;
+            
+            // 1. Prepare all pieces to be nested
+            let piecesToNest = [];
+            
+            rawData.pieces.forEach(piece => {
+                const totalCount = piece.qty * qty;
+                // Use color from DB if available, otherwise fallback to mapping or default
+                let color = piece.color;
+                if (!color) {
+                     color = colorMapping[piece.name] || defaultColor;
+                }
+                
+                // Get bounding box dimensions
+                let w = 0, h = 0;
+                
+                if (piece.geom.type === 'poly') {
+                    // Calculate bounds from pts
+                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                    piece.geom.pts.forEach(p => {
+                        minX = Math.min(minX, p.x);
+                        maxX = Math.max(maxX, p.x);
+                        minY = Math.min(minY, p.y);
+                        maxY = Math.max(maxY, p.y);
+                    });
+                    w = maxX - minX;
+                    h = maxY - minY;
+                } else if (piece.geom.type === 'rect') {
+                    w = piece.geom.halfW * 2;
+                    h = piece.geom.halfH * 2;
+                } else if (piece.geom.type === 'circle') {
+                    w = piece.geom.radius * 2;
+                    h = piece.geom.radius * 2;
+                }
+
+                // Add margin
+                const margin = 0; 
+                w += margin;
+                h += margin;
+
+                // Add multiplier to name if > 1 for clarity
+                let displayName = piece.name;
+                if (piece.qty > 1) {
+                    displayName += ` (${piece.qty}x)`;
+                }
+
+                for(let i=0; i<totalCount; i++) {
+                    piecesToNest.push({
+                        id: piece.id,
+                        name: displayName,
+                        w: w,
+                        h: h,
+                        color: color,
+                        color_name: piece.color_name || getColorName(color),
+                        fabric_name: piece.fabric_name || "Tecido Padrão",
+                        geom: piece.geom,
+                        originalId: i
+                    });
+                }
+            });
+
+            // 2. Group by Fabric + Color
+            const groups = {}; 
+            piecesToNest.forEach(p => {
+                // Key unique for each "roll" needed
+                const key = `${p.fabric_name}||${p.color_name}||${p.color}`;
+                if(!groups[key]) groups[key] = [];
+                groups[key].push(p);
+            });
+
+            // 3. Process each group (Nesting)
+            let globalYOffset = 0;
+            let drawCommands = [];
+            let statsByFabric = {}; 
+
+            // Sort keys to try to group fabrics together visually if keys are similar
+            Object.keys(groups).sort().forEach(key => {
+                let items = groups[key];
+                // Sort pieces by width descending (Best Fit logic)
+                items.sort((a, b) => b.w - a.w);
+
+                const [fabricName, colorName, colorHex] = key.split('||');
+
+                // Header for the group
+                drawCommands.push({type: 'text', text: `${fabricName} - ${colorName}`, x: 10, y: globalYOffset + 20});
+                let startY = globalYOffset + 40;
+
+                // Skyline Bin Packing for this group
+                let skyline = [{x: 0, y: 0, w: fabricWidth}];
+                let groupMaxH = 0;
+
+                items.forEach(item => {
+                    // Find position
+                    let bestNode = null;
+                    let minHeight = Infinity;
+
+                    for (let i = 0; i < skyline.length; i++) {
+                        let y = 0;
+                        let widthLeft = item.w;
+                        if (skyline[i].x + item.w > fabricWidth) continue;
+
+                        for (let j = i; j < skyline.length; j++) {
+                            y = Math.max(y, skyline[j].y);
+                            widthLeft -= skyline[j].w;
+                            if (widthLeft <= 0) break; 
+                        }
+                        
+                        if (widthLeft <= 0) {
+                            if (y < minHeight) {
+                                minHeight = y;
+                                bestNode = skyline[i];
+                            }
+                        }
+                    }
+
+                    if (bestNode) {
+                        item.x = bestNode.x;
+                        item.y = minHeight + startY; // Absolute Y
+                        
+                        // Update Skyline
+                        let newHeight = minHeight + item.h;
+                        groupMaxH = Math.max(groupMaxH, newHeight); // Track relative max height
+
+                        let regionStart = item.x;
+                        let regionEnd = item.x + item.w;
+                        let newSkyline = [];
+                        
+                        for(let i=0; i<skyline.length; i++) {
+                            let node = skyline[i];
+                            let nodeEnd = node.x + node.w;
+                            if (nodeEnd <= regionStart) newSkyline.push(node);
+                            else if (node.x < regionStart && nodeEnd > regionStart) newSkyline.push({ x: node.x, y: node.y, w: regionStart - node.x });
+                        }
+                        newSkyline.push({ x: regionStart, y: newHeight, w: regionEnd - regionStart });
+                        for(let i=0; i<skyline.length; i++) {
+                            let node = skyline[i];
+                            let nodeEnd = node.x + node.w;
+                            if (node.x >= regionEnd) newSkyline.push(node);
+                            else if (node.x < regionEnd && nodeEnd > regionEnd) newSkyline.push({ x: regionEnd, y: node.y, w: nodeEnd - regionEnd });
+                        }
+                        
+                        // Merge logic
+                        let mergedSkyline = [];
+                        if(newSkyline.length > 0) {
+                            let current = newSkyline[0];
+                            for(let k=1; k<newSkyline.length; k++) {
+                                let next = newSkyline[k];
+                                if (Math.abs(current.y - next.y) < 0.1 && Math.abs((current.x+current.w) - next.x) < 0.1) {
+                                    current = { x: current.x, y: current.y, w: current.w + next.w };
+                                } else {
+                                    mergedSkyline.push(current);
+                                    current = next;
+                                }
+                            }
+                            mergedSkyline.push(current);
+                        }
+                        skyline = mergedSkyline;
+                        
+                        drawCommands.push({
+                           type: 'rect',
+                           x: item.x,
+                           y: item.y,
+                           w: item.w - 10,
+                           h: item.h - 10,
+                           color: colorHex,
+                           name: item.name
+                        });
+                    }
+                });
+
+                // Record Stats
+                if (!statsByFabric[fabricName]) statsByFabric[fabricName] = { total: 0, colors: {} };
+                statsByFabric[fabricName].total += groupMaxH;
+                statsByFabric[fabricName].colors[colorName] = groupMaxH;
+
+                globalYOffset = startY + groupMaxH + 50; 
+            });
+
+            canvas.height = globalYOffset * scale + 50;
+
+            // DRAW
+            ctx.scale(scale, scale);
+            ctx.clearRect(0, 0, canvas.width / scale, canvas.height / scale);
+
+            drawCommands.forEach(cmd => {
+                 if (cmd.type === 'text') {
+                    ctx.fillStyle = '#000';
+                    ctx.font = '100px Arial';
+                    ctx.fillText(cmd.text, cmd.x, cmd.y);
+                } else if (cmd.type === 'rect') {
+                    ctx.fillStyle = cmd.color;
+                    ctx.globalAlpha = 0.8;
+                    ctx.fillRect(cmd.x, cmd.y, cmd.w, cmd.h);
+                    ctx.globalAlpha = 1.0;
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2; 
+                    ctx.strokeRect(cmd.x, cmd.y, cmd.w, cmd.h);
+                }
+            });
+            
+            // GENERATE HTML REPORT
+            let statsHtml = `<h3>Estimativa de Consumo</h3>`;
+            
+            Object.keys(statsByFabric).forEach(fabName => {
+                let fabData = statsByFabric[fabName];
+                let totalMeters = fabData.total / 1000;
+                
+                statsHtml += `<div style="margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">`;
+                statsHtml += `<strong>${fabName.toUpperCase()}: ${totalMeters.toFixed(2)} metros</strong><br>`;
+                
+                Object.keys(fabData.colors).forEach(colName => {
+                    let colMeters = fabData.colors[colName] / 1000;
+                    statsHtml += `&nbsp;&nbsp;&nbsp;&bullet; ${colName}: ${colMeters.toFixed(2)} m<br>`;
+                });
+                
+                statsHtml += `</div>`;
+            });
+
+            document.getElementById('stats').innerHTML = statsHtml;
+        }
+
+        function getColorName(hex) {
+            if(hex === '#e74c3c') return 'Vermelho';
+            if(hex === '#3498db') return 'Azul';
+            return 'Outro';
+        }
+
+        // Init
+        window.onload = updateVisualization;
+    </script>
+{% endblock %}

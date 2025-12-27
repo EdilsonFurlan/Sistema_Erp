@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Produto{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { margin-top: 20px; padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background: #2ecc71; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Novo Produto</h1>
+        <p>Defina a base técnica do produto (Geometria + Tecidos).</p>
+        {% if std_ref_items or std_ref_insumos %}
+        <div style="margin-bottom: 20px; padding: 15px; background: #e8f6f3; border: 1px solid #d4efdf; border-radius: 4px;">
+            <p style="margin: 0; color: #145a32; font-weight: bold;">✔ Configuração Padrão Identificada</p>
+            <small>Os seguintes itens serão copiados automaticamente da Referência Padrão:</small>
+            
+            <ul style="margin-top: 10px; padding-left: 20px; color: #555;">
+                {% for item in std_ref_items %}
+                    <li>{{ item.material.nome }} ({{ item.molde_detalhe.nome_original|default:"Geral" }}) - {{ item.quantidade }} un/m</li>
+                {% endfor %}
+                {% for item in std_ref_insumos %}
+                    <li>{{ item.material.nome }} - {{ item.quantidade }} un</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div style="flex: 2;">
+                    <label>Nome da Nova Referência:</label>
+                    <input type="text" name="nome" required placeholder="Ex: Variação Verão 2025" style="font-size: 1.2em; padding: 10px;">
+                </div>
+                <div style="flex: 1;">
+                    <label>Custo Base (R$):</label>
+                    <input type="number" name="preco" required step="0.01" value="0.00" style="font-size: 1.2em; padding: 10px;">
+                </div>
+            </div>
+
+            <!-- Hidden Molde Input if Pre-selected -->
+            {% if initial_molde_id %}
+                <input type="hidden" name="molde" value="{{ initial_molde_id }}">
+                <p><strong>Molde Base:</strong> {{ selected_molde_obj.nome }} (Selecionado)</p>
+            {% else %}
+                <div id="molde_div">
+                    <label>Molde Base:</label>
+                    <select name="molde" id="molde_select" class="form-control" required onchange="this.form.submit()"> <!-- Simple reload for preview? No, complex. Just keep text -->
+                        <option value="">-- Selecione o Molde --</option>
+                        {% for molde in moldes %}
+                            <option value="{{ molde.id }}">{{ molde.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+
+            <button type="submit" style="background: #3498db; font-size: 1.1em;">Confirmar e Criar Referência</button>
+        </form>
+    </div>
+{% endblock %}

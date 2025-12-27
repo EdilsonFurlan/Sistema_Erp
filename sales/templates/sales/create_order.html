@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Pedido{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        button { margin-top: 20px; padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background: #2ecc71; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Novo Pedido</h1>
+        <form method="POST">
+            {% csrf_token %}
+            
+            <label>Selecione o Cliente:</label>
+            <select name="client_id" required class="form-control" style="margin-bottom: 20px;">
+                <option value="">-- Selecione --</option>
+                {% for cliente in clientes %}
+                <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                {% endfor %}
+            </select>
+            <div style="text-align: right; margin-bottom: 20px;">
+                <a href="{% url 'client_create' %}" style="font-size: 14px; text-decoration: none;">+ Cadastrar Novo Cliente</a>
+            </div>
+
+            <hr>
+
+            <!-- 1. SELEÇÃO DE MOLDE (OBRIGATÓRIO) -->
+            <label>1. Selecione o Molde:</label>
+            <select name="molde" id="molde-select" required onchange="filterProducts()">
+                <option value="">-- Escolha um Molde --</option>
+                {% for molde in moldes %}
+                    <option value="{{ molde.id }}">{{ molde.nome }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- 2. SELEÇÃO DE PRODUTO (OPCIONAL, FILTRADA) -->
+            <div id="product-container" style="display:none; margin-top: 15px;">
+                <label>2. Configuração (Produto Definido):</label>
+                <select name="produto" id="product-select">
+                    <option value="">-- Configuração Manual / Personalizada --</option>
+                    {% for prod in produtos %}
+                        <option value="{{ prod.id }}" data-molde-id="{{ prod.molde.id }}">
+                            {{ prod.nome }} ({{ prod.molde.nome }})
+                        </option>
+                    {% endfor %}
+                </select>
+                <small style="color: grey;">Selecione um produto para preencher tecidos/cores automaticamente.</small>
+            </div>
+
+            <label style="margin-top: 15px;">Quantidade:</label>
+            <input type="number" name="qty" value="60" min="1" required>
+
+            <button type="submit" style="margin-top: 20px;">Continuar</button>
+        </form>
+    </div>
+
+    <script>
+        function filterProducts() {
+            const moldeSelect = document.getElementById('molde-select');
+            const productContainer = document.getElementById('product-container');
+            const productSelect = document.getElementById('product-select');
+            const selectedMoldeId = moldeSelect.value;
+            
+            // Reset product selection
+            productSelect.value = "";
+
+            if (!selectedMoldeId) {
+                productContainer.style.display = 'none';
+                return;
+            }
+
+            // Show container
+            productContainer.style.display = 'block';
+
+            // Filter options
+            let hasProducts = false;
+            const options = productSelect.querySelectorAll('option');
+            
+            options.forEach(opt => {
+                if (opt.value === "") return; // Skip logic for default option
+
+                const productMoldeId = opt.getAttribute('data-molde-id');
+                if (productMoldeId === selectedMoldeId) {
+                    opt.style.display = 'block';
+                    hasProducts = true;
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+        }
+    </script>
+{% endblock %}

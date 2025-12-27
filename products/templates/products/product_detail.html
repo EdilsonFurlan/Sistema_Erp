@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+
+{% block title %}Engenharia de Produto | Gestão ERP{% endblock %}
+
+{% block extra_head %}
+<style>
+    .erp-container {
+        padding: 30px;
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 60px);
+    }
+    .erp-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: none;
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+    .erp-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #edf2f7;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+    }
+    .erp-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0;
+    }
+    
+    .table-erp {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .table-erp th {
+        background-color: #f7fafc;
+        color: #4a5568;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        padding: 14px 20px;
+        border-bottom: 1px solid #edf2f7;
+    }
+    .table-erp td {
+        padding: 16px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .form-control-erp {
+        border: 1px solid #718096; /* High contrast */
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        width: 100%;
+        color: #1a202c;
+    }
+    .form-control-erp:focus {
+        border-color: #3182ce;
+        box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        outline: none;
+    }
+
+    .calc-box {
+        background: #f0fff4;
+        border: 1px solid #c6f6d5;
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+    }
+    .calc-value {
+        font-weight: 800;
+        color: #276749;
+        font-size: 1.1rem;
+    }
+
+    .btn-erp-save {
+        background-color: #38a169;
+        color: white;
+        padding: 10px 24px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 700;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-erp-save:hover { background-color: #2f855a; transform: translateY(-1px); }
+
+    .cost-badge {
+        background: #2d3748;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <form method="POST" id="batchForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_consumption_batch">
+
+        <!-- HEADER SECTION -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex flex-column">
+                    <input type="text" name="nome" value="{{ product.nome }}" 
+                           class="form-control-erp fw-bold border-0 bg-transparent px-0" 
+                           style="font-size: 1.75rem; width: auto; min-width: 400px;"
+                           placeholder="Nome da Referência">
+                    <div class="d-flex gap-2">
+                        {% if product.eh_padrao %}
+                            <span class="badge bg-purple text-white" style="background-color: #6b46c1;">REFERÊNCIA PADRÃO</span>
+                        {% elif not product.parent %}
+                            <span class="badge bg-info text-white">REFERÊNCIA TÉCNICA (SECUNDÁRIA)</span>
+                        {% else %}
+                            <span class="badge bg-success text-white">PRODUTO DE VENDA (SKU)</span>
+                            <span class="text-muted small">Base: {{ product.parent.nome }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if not product.parent %}
+                <div class="cost-badge shadow-sm" title="Custo total calculado">
+                    <small style="opacity: 0.7; font-weight: normal; font-size: 0.8em; display: block; line-height: 1;">Custo Eng.</small>
+                    R$ {{ custo_total|floatformat:2 }}
+                </div>
+                {% else %}
+                <div class="d-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm border">
+                    <label class="small fw-bold text-muted">PREÇO DE VENDA:</label>
+                    <div class="input-group input-group-sm" style="width: 150px;">
+                        <span class="input-group-text bg-light border-0">R$</span>
+                        <input type="number" step="0.01" name="preco" value="{{ product.preco|stringformat:'.2f' }}" class="form-control border-0 fw-bold text-primary">
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar à Lista
+                </a>
+                <button type="submit" class="btn-erp-save">
+                    <i class="fas fa-save"></i> {% if is_new %}CRIAR PRODUTO{% else %}SALVAR ALTERAÇÕES{% endif %}
+                </button>
+            </div>
+        </div>
+
+        {% if product.parent %}
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+            <i class="fas fa-info-circle me-2"></i> 
+            Este é um <b>Produto SKU (Venda)</b>. As definições técnicas (consumo e materiais) são herdadas da <b>Referência Base</b> e não podem ser editadas aqui.
+        </div>
+        <style>
+            .engineering-section { opacity: 0.7; pointer-events: none; filter: grayscale(0.5); }
+        </style>
+        {% endif %}
+
+        <div class="{% if product.parent %}engineering-section{% endif %}">
+
+        <!-- FABRICS CARD -->
+        <div class="erp-card">
+            <div class="erp-header">
+                <h2 class="erp-title"><i class="fas fa-layer-group text-primary mr-2"></i> Composição por Peça (Molde)</h2>
+                <span class="text-muted small">Vincule materiais e calcule o consumo estimado</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table-erp">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Peça / Detalhe</th>
+                            <th style="width: 15%;">Geometria (mm)</th>
+                            <th style="width: 30%;">Material / Tecido</th>
+                            <th style="width: 30%;">Encaixe & Consumo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in detalhes %}
+                        <tr>
+                            <td>
+                                <div class="font-weight-bold text-dark">{{ item.obj.nome_original }}</div>
+                                <div class="d-flex gap-2 mt-1">
+                                    <span class="badge bg-light text-muted border">{{ item.obj.qtd_padrao }}x</span>
+                                    <span class="badge bg-light text-muted border"><i class="fas fa-arrows-alt-v"></i> {{ item.obj.orientacao_fio|default:"-" }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.width_mm > 0 %}
+                                    <div class="small">
+                                        L: <b>{{ item.width_mm|floatformat:0 }}</b><br>
+                                        H: <b>{{ item.height_mm|floatformat:0 }}</b>
+                                    </div>
+                                {% else %}
+                                    <span class="text-danger small">Dados ausentes</span>
+                                {% endif %}
+                                <input type="hidden" id="w_{{ item.obj.id }}" value="{{ item.width_mm|floatformat:2 }}">
+                                <input type="hidden" id="h_{{ item.obj.id }}" value="{{ item.height_mm|floatformat:2 }}">
+                                <input type="hidden" id="q_{{ item.obj.id }}" value="{{ item.obj.qtd_padrao }}">
+                            </td>
+                            <td>
+                                <select class="form-control-erp fabric-select"
+                                        name="material_{{ item.obj.id }}"
+                                        data-id="{{ item.obj.id }}"
+                                        onchange="calculateConsumption({{ item.obj.id }})">
+                                    <option value="" data-width="0">-- Selecionar Material --</option>
+                                    {% for t in tecidos %}
+                                    <option value="{{ t.id }}" 
+                                            data-width="{{ t.largura_padrao_mm|default:1500 }}" 
+                                            data-unit="{{ t.unidade }}"
+                                            {% if item.saved_material_id == t.id %}selected{% endif %}>
+                                        {{ t.nome }} ({{ t.largura_padrao_mm|default:"-" }}mm)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="mt-1 small text-primary" id="lbl_width_{{ item.obj.id }}"></div>
+                                
+                                {% if item.saved_material_id %}
+                                <script>
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        calculateConsumption({{ item.obj.id }});
+                                    });
+                                </script>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="calc-box flex-grow-1">
+                                        <div class="calc-value" id="res_{{ item.obj.id }}">-</div>
+                                        <input type="hidden" name="quantidade_{{ item.obj.id }}" id="input_qtd_{{ item.obj.id }}">
+                                    </div>
+                                    <div class="text-right small text-muted" style="min-width: 80px;">
+                                        Eficiência:<br> <b id="fit_{{ item.obj.id }}">-</b>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ACCESSORIES CARD -->
+        <div class="erp-card">
+            <div class="erp-header">
+                <h2 class="erp-title"><i class="fas fa-boxes text-primary mr-2"></i> Insumos e Aviamentos</h2>
+                <span class="text-muted small">Adicione itens globais à referência</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table-erp" id="insumosTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 45%;">Descrição do Material</th>
+                            <th style="width: 25%;">Quantidade</th>
+                            <th style="width: 30%;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if is_new %}
+                            {% for item in insumos_gerais %}
+                            <tr>
+                                <td>
+                                    <select name="new_insumo_material[]" class="form-control-erp">
+                                        {% for m in acessorios %}
+                                        <option value="{{ m.id }}" {% if item.material.id == m.id %}selected{% endif %}>
+                                            {{ m.nome }} ({{ m.unidade }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="new_insumo_quantidade[]" 
+                                           class="form-control-erp" value="{{ item.quantidade|stringformat:'.2f' }}">
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm border-0" disabled style="opacity: 0.3; cursor: not-allowed;" title="Não é permitido remover itens na criação de variante">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            {% for item in insumos_gerais %}
+                            <tr>
+                                <td>
+                                    <select name="insumo_exist_mat_{{ item.id }}" class="form-control-erp">
+                                        {% for m in acessorios %}
+                                        <option value="{{ m.id }}" {% if item.material.id == m.id %}selected{% endif %}>
+                                            {{ m.nome }} ({{ m.unidade }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="insumo_exist_qty_{{ item.id }}" 
+                                           class="form-control-erp" value="{{ item.quantidade|stringformat:'.2f' }}">
+                                </td>
+                                <td>
+                                    <input type="hidden" name="insumo_delete_{{ item.id }}" id="del_{{ item.id }}" value="">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm border-0" disabled style="opacity: 0.3; cursor: not-allowed;" title="Não é permitido remover itens da ficha técnica">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function calculateConsumption(id) {
+    const select = document.querySelector(`.fabric-select[data-id="${id}"]`);
+    if (!select) return;
+
+    const widthFabric = parseFloat(select.selectedOptions[0].dataset.width || 0);
+    const unit = (select.selectedOptions[0].dataset.unit || '').toLowerCase();
+    const lbl = document.getElementById(`lbl_width_${id}`);
+    
+    if(widthFabric > 0) {
+        lbl.innerHTML = `<i class="fas fa-check-circle"></i> Largura: ${widthFabric}mm`;
+    } else { 
+        lbl.innerText = ""; 
+    }
+    
+    if (widthFabric <= 0) {
+        document.getElementById(`res_${id}`).innerText = "-";
+        document.getElementById(`fit_${id}`).innerText = "-";
+        document.getElementById(`input_qtd_${id}`).value = "";
+        return;
+    }
+
+    const w = parseFloat(document.getElementById(`w_${id}`).value || 0);
+    const h = parseFloat(document.getElementById(`h_${id}`).value || 0);
+    const q = parseFloat(document.getElementById(`q_${id}`).value || 1);
+
+    let fit = Math.floor(widthFabric / w);
+    if (fit < 1) fit = 1;
+    document.getElementById(`fit_${id}`).innerText = `${fit} pçs/larg`;
+
+    let total = (h / fit) * q * 1.05;
+    let label = "mm";
+    if (['m','mt','metro','metros'].includes(unit)) {
+        total /= 1000; 
+        label = "mt";
+    }
+
+    document.getElementById(`res_${id}`).innerText = total.toFixed(3) + " " + label;
+    document.getElementById(`input_qtd_${id}`).value = total.toFixed(4);
+}
+
+function markForDeletion(id, btn) {
+    if(confirm("Deseja remover este insumo?")) {
+        document.getElementById('del_' + id).value = 'true';
+        btn.closest('tr').style.opacity = '0.3';
+        btn.closest('tr').style.pointerEvents = 'none';
+        btn.innerHTML = "<i class='fas fa-undo'></i> Marcado p/ excluir";
+    }
+}
+
+function addInsumoRow() {
+    const tableBody = document.getElementById('insumosTable').getElementsByTagName('tbody')[0];
+    const lastRow = tableBody.rows[tableBody.rows.length - 1];
+    const selectMat = lastRow.querySelector('select');
+    const inputQty = lastRow.querySelector('input');
+    
+    if (!selectMat.value || !inputQty.value) {
+        alert("Preencha material e quantidade.");
+        return;
+    }
+
+    const newRow = tableBody.insertRow(tableBody.rows.length - 1);
+    newRow.innerHTML = `
+        <td>
+            <select name="new_insumo_material[]" class="form-control-erp">
+                <option value="${selectMat.value}" selected>${selectMat.selectedOptions[0].text}</option>
+            </select>
+        </td>
+        <td>
+            <input type="number" step="0.01" name="new_insumo_quantidade[]" class="form-control-erp" value="${inputQty.value}">
+        </td>
+        <td>
+            <button type="button" class="btn btn-outline-danger btn-sm border-0 w-100" onclick="this.closest('tr').remove()">
+                <i class="fas fa-trash"></i> Remover
+            </button>
+        </td>
+    `;
+    
+    selectMat.value = "";
+    inputQty.value = "";
+}
+</script>
+{% endblock %}

@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Produtos | ERP Confecção{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <div class="erp-header">
+        <div>
+            <h1>Produtos</h1>
+        </div>
+        <div class="header-actions">
+            <!-- Em um ERP real, "+ Criar Produto" abriria um seletor ou criaria a partir de um padrão -->
+            <a href="{% url 'integrated_view' %}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-plus"></i> Criar Produto
+            </a>
+            <a href="{% url 'molde_import' %}" class="btn-erp btn-erp-secondary">
+                <i class="fas fa-plus"></i> Criar Produto Padrão
+            </a>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card primary">
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">Total de Produtos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.standard }}</div>
+            <div class="stat-label">Referências / Padrão</div>
+        </div>
+        <div class="stat-card info">
+            <div class="stat-value">{{ stats.color }}</div>
+            <div class="stat-label">Vendas / SKUs</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-value">Ativos</div>
+            <div class="stat-label">Status</div>
+        </div>
+    </div>
+
+    <!-- Filters (No Refresh) -->
+    <div class="filter-card" id="filterArea">
+        <div class="filter-group">
+            <div class="checkbox-group">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="checkStandard" class="filter-trigger" checked>
+                    Mostrar Produtos Padrão
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="checkColor" class="filter-trigger" checked>
+                    Mostrar Produtos com Cor
+                </label>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Molde</label>
+            <select id="moldeSelect" class="select-erp filter-trigger" style="width: 250px;">
+                <option value="all">Todos os moldes</option>
+                {% for molde in moldes %}
+                <option value="{{ molde.id }}" 
+                        data-img="{% if molde.imagem %}{{ molde.imagem.url }}{% else %}/static/img/no-image.png{% endif %}">
+                    {{ molde.nome }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" class="search-input-erp filter-trigger" placeholder="Buscar por nome do produto">
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>Nome do Produto</th>
+                    <th>Tipo</th>
+                    <th>Molde</th>
+                    <th>Custo Est.</th>
+                    <th>SKUs</th>
+                    <th>Cor</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr class="product-row" 
+                    data-molde-id="{{ p.molde.id }}" 
+                    data-tipo="{% if p.eh_padrao %}standard{% else %}color{% endif %}"
+                    data-nome="{{ p.nome|lower }}">
+                    <td style="font-weight: 600;">{{ p.nome }}</td>
+                    <td>
+                        {% if p.eh_padrao %}
+                        <span class="badge badge-padrao">PADRÃO</span>
+                        {% else %}
+                        <span class="badge badge-produto">PRODUTO</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="molde-info">
+                            {% if p.molde.imagem %}
+                                <img src="{{ p.molde.imagem.url }}" class="molde-thumb-table" alt="{{ p.molde.nome }}">
+                            {% else %}
+                                <div class="molde-icon"><i class="fas fa-shapes"></i></div>
+                            {% endif %}
+                            <span>{{ p.molde.nome }}</span>
+                        </div>
+                    </td>
+                    <td style="font-weight: 600; color: var(--success);">
+                        R$ {{ p.custo_estimado|floatformat:2 }}
+                    </td>
+                    <td>
+                        {% if p.eh_padrao %}
+                            <span class="badge" style="background: #edf2f7; color: #4a5568;">{{ p.sku_count }} SKUs</span>
+                        {% else %}
+                            --
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.eh_padrao %}
+                            --
+                        {% else %}
+                            <!-- No SKU/Variant model, we might need a specific field or check first item color -->
+                            {% with first_item=p.itens_material.first %}
+                                {% if first_item and first_item.cor %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: {{ first_item.cor.hex_code }}; border: 1px solid #ccc;"></div>
+                                        {{ first_item.cor.nome }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted opacity-50">Não def.</span>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    </td>
+                    <td class="actions-cell">
+                        {% if p.eh_padrao %}
+                            <!-- Ações Produto Padrão -->
+                            <a href="{% url 'product_detail' p.id %}" class="btn-action-sm btn-action-primary" title="Ver custo e consumo">
+                                <i class="fas fa-calculator"></i> Custos
+                            </a>
+                            <a href="{% url 'sku_create' p.id %}" class="btn-action-sm btn-action-success" title="Criar variação">
+                                <i class="fas fa-plus"></i> SKU
+                            </a>
+                        {% else %}
+                            <!-- Ações Produto com Cor -->
+                            <a href="{% url 'product_detail' p.id %}" class="btn-action-sm btn-action-warning" title="Editar preço">
+                                <i class="fas fa-tag"></i> Preço
+                            </a>
+                            <a href="{% url 'movement_list' %}?q={{ p.nome }}" class="btn-action-sm btn-action-primary" title="Ver estoque">
+                                <i class="fas fa-warehouse"></i> Estoque
+                            </a>
+                            <a href="{% url 'create_op' p.id %}" class="btn-action-sm btn-action-success" title="Produzir">
+                                <i class="fas fa-industry"></i> Produzir
+                            </a>
+                            <a href="{% url 'create_order' %}?sku_id={{ p.id }}" class="btn-action-sm btn-action-warning" title="Vender">
+                                <i class="fas fa-shopping-cart"></i> Vender
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'product_delete' p.id %}" class="action-btn" title="Excluir" onclick="return confirm('Excluir este produto?')">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="fas fa-box-open"></i>
+                            <p>Nenhum produto encontrado com os filtros selecionados.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    (function() {
+        function initProductList() {
+            console.log("Initializing Product List Filters...");
+            
+            // Initialize Select2 if not already done
+            function formatMolde(state) {
+                if (!state.id || state.id === 'all') return state.text;
+                var baseUrl = $(state.element).data('img');
+                return $(
+                    '<div class="molde-option">' +
+                        '<img src="' + baseUrl + '" class="molde-thumb-mini" /> ' +
+                        '<span>' + state.text + '</span>' +
+                    '</div>'
+                );
+            };
+
+            $('#moldeSelect').select2({
+                templateResult: formatMolde,
+                templateSelection: formatMolde,
+                minimumResultsForSearch: 5
+            });
+
+            // Client-side Filtering Logic
+            function applyFilters() {
+                const showStandard = $('#checkStandard').is(':checked');
+                const showColor = $('#checkColor').is(':checked');
+                const selectedMolde = $('#moldeSelect').val();
+                const searchText = $('#searchInput').val().toLowerCase().trim();
+
+                let visibleCount = 0;
+
+                $('.product-row').each(function() {
+                    const row = $(this);
+                    const tipo = row.data('tipo');
+                    const moldeId = row.data('molde-id').toString();
+                    const nome = row.data('nome');
+
+                    let show = true;
+                    if (tipo === 'standard' && !showStandard) show = false;
+                    if (tipo === 'color' && !showColor) show = false;
+                    if (show && selectedMolde !== 'all' && moldeId !== selectedMolde) show = false;
+                    if (show && searchText && !nome.includes(searchText)) show = false;
+
+                    if (show) {
+                        row.show();
+                        visibleCount++;
+                    } else {
+                        row.hide();
+                    }
+                });
+
+                if (visibleCount === 0) {
+                    if ($('#emptyRow').length === 0) {
+                        $('tbody').append('<tr id="emptyRow"><td colspan="7"><div class="empty-state"><i class="fas fa-box-open"></i><p>Nenhum produto encontrado.</p></div></td></tr>');
+                    } else {
+                        $('#emptyRow').show();
+                    }
+                } else {
+                    $('#emptyRow').hide();
+                }
+            }
+
+            $('.filter-trigger').off('change keyup').on('change keyup', applyFilters);
+            $('#moldeSelect').off('select2:select').on('select2:select', applyFilters);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const moldeId = urlParams.get('molde_id');
+            if (moldeId) {
+                $('#moldeSelect').val(moldeId).trigger('change');
+            }
+
+            applyFilters();
+        }
+
+        // Run on load and on HTMX settle
+        $(document).ready(initProductList);
+        document.addEventListener('htmx:afterSettle', initProductList);
+    })();
+</script>
+{% endblock %}

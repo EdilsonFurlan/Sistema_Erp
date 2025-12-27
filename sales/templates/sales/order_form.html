@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .erp-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .erp-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #ecf0f1;
+        padding-bottom: 1rem;
+    }
+    .erp-header h1 {
+        margin: 0;
+        color: #2c3e50;
+    }
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    .form-section h3 {
+        font-size: 1.1rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.5rem;
+    }
+    .erp-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #34495e;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #bdc3c7;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+    
+    /* Table Styles */
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    .items-table th {
+        background-color: #f8f9fa;
+        color: #2c3e50;
+        font-weight: 600;
+        text-align: left;
+        padding: 1rem;
+        border-bottom: 2px solid #dfe6e9;
+    }
+    .items-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #ecf0f1;
+        vertical-align: middle;
+    }
+    .items-table tr.empty-form {
+        display: none; /* Hidden template */
+    }
+    
+    /* Buttons */
+    .btn-action {
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-primary { background-color: #3498db; color: white; }
+    .btn-primary:hover { background-color: #2980b9; }
+    
+    .btn-secondary { background-color: #95a5a6; color: white; }
+    .btn-secondary:hover { background-color: #7f8c8d; }
+    
+    .btn-success { background-color: #27ae60; color: white; }
+    .btn-success:hover { background-color: #219150; }
+    
+    .btn-danger { background-color: #e74c3c; color: white; padding: 0.4rem 0.8rem; font-size: 0.9rem;}
+    
+    .actions-bar {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        border-top: 2px solid #ecf0f1;
+        padding-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <form method="post" id="orderForm">
+        {% csrf_token %}
+        
+        <div class="erp-header">
+            <h1>{{ title }}</h1>
+            <div>
+                <a href="{% url 'order_list' %}" class="btn-action btn-secondary">Cancelar</a>
+            </div>
+        </div>
+
+        <!-- Pedido Header -->
+        <div class="form-section">
+            <h3>Dados do Pedido</h3>
+            <div class="erp-grid">
+                <div class="form-group">
+                    <label for="{{ form.cliente.id_for_label }}">Cliente (Avulso)</label>
+                    {{ form.cliente }}
+                    {% if form.cliente.errors %}<div style="color:red">{{ form.cliente.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.cliente_cadastro.id_for_label }}">Cliente (Cadastro)</label>
+                    {{ form.cliente_cadastro }}
+                    {% if form.cliente_cadastro.errors %}<div style="color:red">{{ form.cliente_cadastro.errors }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Itens -->
+        <div class="form-section">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Itens do Pedido</h3>
+                <button type="button" id="add-item-btn" class="btn-action btn-success">+ Adicionar Item</button>
+            </div>
+            
+            {{ formset.management_form }}
+            
+            <table class="items-table" id="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%">Produto Cor (SKU)</th>
+                        <th style="width: 15%">Quantidade</th>
+                        <th style="width: 20%">Preço Unit.</th>
+                        <th style="width: 20%">Subtotal</th>
+                        <th style="width: 5%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="items-body">
+                    {% for form in formset %}
+                        <tr class="item-row {% if form.DELETE.value %}hidden-row{% endif %}">
+                            
+                            {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+                            
+                            <td>
+                                {{ form.produto }}
+                                {% if form.produto.errors %}<div style="color:red">{{ form.produto.errors }}</div>{% endif %}
+                            </td>
+                            <td>
+                                {{ form.quantidade }}
+                                {% if form.quantidade.errors %}<div style="color:red">{{ form.quantidade.errors }}</div>{% endif %}
+                            </td>
+                            <td>
+                                {{ form.preco_unitario }}
+                            </td>
+                             <td>
+                                <input type="text" class="form-control item-subtotal" readonly value="0.00">
+                            </td>
+                            <td style="text-align: center;">
+                                {% if formset.can_delete %}
+                                    <div style="display:none;"></div>{{ form.DELETE }}</div>
+                                    <button type="button" class="btn-action btn-danger remove-item-btn">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" style="text-align: right; font-weight: bold;">TOTAL PEDIDO:</td>
+                        <td colspan="2">
+                            <input type="text" id="order-total" class="form-control" readonly value="0.00" style="font-weight: bold; background-color: #f8f9fa;">
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="actions-bar">
+            <button type="submit" name="save_continue" class="btn-action btn-secondary">Salvar e Continuar</button>
+            <button type="submit" class="btn-action btn-primary">Salvar Pedido</button>
+        </div>
+    </form>
+
+    <!-- Empty Form Template -->
+    <table style="display:none">
+        <tbody id="empty-form-row">
+            <tr class="item-row">
+                <td>
+                    {{ formset.empty_form.produto }}
+                </td>
+                <td>
+                    {{ formset.empty_form.quantidade }}
+                </td>
+                <td>
+                    {{ formset.empty_form.preco_unitario }}
+                </td>
+                <td>
+                    <input type="text" class="form-control item-subtotal" readonly value="0.00">
+                </td>
+                <td style="text-align: center;">
+                    <div style="display:none;">{{ formset.empty_form.DELETE }}</div>
+                    <button type="button" class="btn-action btn-danger remove-item-btn">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addItemBtn = document.getElementById('add-item-btn');
+        const itemsBody = document.getElementById('items-body');
+        const emptyRow = document.getElementById('empty-form-row').firstElementChild;
+        const totalFormsInput = document.getElementById('id_itens-TOTAL_FORMS'); // Default prefix is 'itens'? Check formset definition.
+        
+        // Check prefix from management form output usually 'pedidoitem_set' or similar if not specified
+        // In this case we used inlineformset_factory(Pedido, PedidoItem) without prefix arg, so it uses 'itens' (related_name) or 'pedidoitem_set'.
+        // Let's inspect the management form in DOM to be sure, OR set prefix explicitly in view.
+        // Good practice: inspect "id_order_items-TOTAL_FORMS" or similar.
+        // Standard django inline is 'related_name' or model_set.
+        // PedidoItem related_name is 'itens' in models.py: related_name='itens'
+        
+        const prefix = 'itens'; 
+
+        // Calculation Logic
+        function updateRow(row) {
+            const qtyInput = row.querySelector('.item-qty');
+            const priceInput = row.querySelector('.item-price');
+            const subtotalInput = row.querySelector('.item-subtotal');
+            
+            if (qtyInput && priceInput && subtotalInput) {
+                const qty = parseFloat(qtyInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const sub = qty * price;
+                subtotalInput.value = sub.toFixed(2);
+            }
+            updateTotal();
+        }
+
+        function updateTotal() {
+            let total = 0;
+            document.querySelectorAll('.item-row:not(.hidden-row)').forEach(row => {
+                // exclude empty template
+                if(row.closest('table').style.display === 'none') return; 
+                
+                const subInput = row.querySelector('.item-subtotal');
+                if (subInput) {
+                    total += parseFloat(subInput.value) || 0;
+                }
+            });
+            document.getElementById('order-total').value = total.toFixed(2);
+        }
+
+        // Attach listeners to a row
+        function attachListeners(row) {
+             const inputs = row.querySelectorAll('input, select');
+             inputs.forEach(input => {
+                 input.addEventListener('input', () => updateRow(row));
+                 input.addEventListener('change', () => updateRow(row));
+             });
+
+             const removeBtn = row.querySelector('.remove-item-btn');
+             if (removeBtn) {
+                 removeBtn.addEventListener('click', function() {
+                     const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
+                     if (deleteCheckbox) {
+                         deleteCheckbox.checked = true;
+                         row.classList.add('hidden-row');
+                         row.style.display = 'none';
+                         updateTotal();
+                     } else {
+                         // If it's a new row not yet saved, we can just remove it
+                         row.remove();
+                         updateTotal();
+                         // Note: decrementing TOTAL_FORMS is tricky with Django formsets, 
+                         // usually better to just leave it and let the server handle empty forms or gaps.
+                     }
+                 });
+             }
+             
+             updateRow(row);
+        }
+
+        // Init existing rows
+        document.querySelectorAll('.item-row').forEach(row => {
+            if (!row.classList.contains('empty-form')) {
+                attachListeners(row);
+            }
+        });
+        
+        addItemBtn.addEventListener('click', function() {
+            const formCount = parseInt(totalFormsInput.value);
+            const newRow = emptyRow.cloneNode(true);
+            
+            // Replace prefix in all attributes
+            newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, formCount);
+            
+            // Fix IDs and Names for the newly cloned row (innerHTML might not catch everything if we cloned the node)
+            // But since we use innerHTML replacement on the clone, it should be fine.
+            
+            itemsBody.appendChild(newRow);
+            totalFormsInput.value = formCount + 1;
+            
+            attachListeners(newRow);
+            updateTotal();
+        });
+
+        // initial total
+        updateTotal();
+    });
+</script>
+{% endblock %}

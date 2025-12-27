@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Ordens de Compra{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { background: white; padding: 25px; border-radius: 8px; max-width: 900px; margin: auto; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f8f9fa; color: #666; font-weight: 600; }
+        tr:hover { background-color: #f1f1f1; }
+        
+        .status-aberta { color: #f39c12; font-weight: bold; }
+        .status-enviada { color: #3498db; font-weight: bold; }
+        .status-recebida { color: #27ae60; font-weight: bold; }
+        
+        .btn { padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 14px; background: #eee; color: #333; }
+        .btn:hover { background: #ddd; }
+        .btn-new { background: #3498db; color: white; }
+        .btn-new:hover { background: #2980b9; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header">
+            <h1>Ordens de Compra</h1>
+            <a href="{% url 'purchase_planning' %}" class="btn btn-new">+ Nova OC</a>
+        </div>
+        
+        {% if ocs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th>Pedidos</th>
+                    <th>Itens</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for oc in ocs %}
+                <tr>
+                    <td>{{ oc.id }}</td>
+                    <td>{{ oc.data_criacao|date:"d/m/Y" }}</td>
+                    <td>
+                        <span class="status-{{ oc.status }}">{{ oc.get_status_display }}</span>
+                    </td>
+                    <td>{{ oc.pedidos.count }}</td>
+                    <td>{{ oc.itens.count }}</td>
+                    <td>
+                        <a href="{% url 'purchase_order_detail' oc.id %}" class="btn">Visualizar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="text-align:center; margin-top:30px; color:#777">Nenhuma Ordem de Compra registrada.</p>
+        {% endif %}
+    </div>
+{% endblock %}

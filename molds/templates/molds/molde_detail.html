@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Molde | Gestão ERP{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="erp-title">{{ molde.nome }}</h1>
+            <p class="text-muted small mb-0">Detalhamento técnico das peças e geometria</p>
+        </div>
+        <a href="{% url 'molde_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar ao Catálogo
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- INFO BÁSICA -->
+        <div class="col-lg-4">
+            <div class="erp-card">
+                <div class="erp-header">
+                    <h5 class="m-0 font-weight-bold"><i class="fas fa-info-circle text-primary"></i> Informações Gerais</h5>
+                </div>
+                <div class="p-4">
+                    {% if molde.imagem %}
+                        <img src="{{ molde.imagem.url }}" class="img-fluid img-preview mb-4 w-100">
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <div class="info-label">Data de Importação</div>
+                        <div class="info-value">{{ molde.data_criacao|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    
+                    {% if molde.arquivo_json %}
+                    <div class="mb-0">
+                        <div class="info-label">Arquivo de Origem</div>
+                        <a href="{{ molde.arquivo_json.url }}" class="info-value text-primary">
+                            <i class="fas fa-file-download"></i> {{ molde.arquivo_json.name|truncatechars:30 }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- LISTA DE PEÇAS -->
+        <div class="col-lg-8">
+            <div class="erp-card">
+                <div class="erp-header">
+                    <h5 class="m-0 font-weight-bold"><i class="fas fa-vector-square text-primary"></i> Geometria das Peças</h5>
+                    <span class="badge badge-primary px-3 py-2" style="border-radius: 20px;">
+                        {{ pecas.count }} Itens Detectados
+                    </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" style="vertical-align: middle;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="border-0 px-4 py-3 text-muted small text-uppercase">Nome da Peça</th>
+                                <th class="border-0 text-center px-4 py-3 text-muted small text-uppercase">Dimensões (mm)</th>
+                                <th class="border-0 text-center px-4 py-3 text-muted small text-uppercase">Sentido / Fio</th>
+                                <th class="border-0 text-center px-4 py-3 text-muted small text-uppercase">Qtd</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for peca in pecas %}
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <div class="font-weight-bold text-dark">{{ peca.nome_original }}</div>
+                                </td>
+                                <td class="text-center px-4 py-3">
+                                    {% if peca.largura_mm > 0 %}
+                                        <span class="text-dark">{{ peca.altura_mm|floatformat:0 }} <small class="text-muted">×</small> {{ peca.largura_mm|floatformat:0 }}</span>
+                                    {% else %}
+                                        <span class="badge badge-warning-soft text-warning">Reimportar</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center px-4 py-3 text-muted">
+                                    <i class="fas fa-arrows-alt-v"></i> {{ peca.orientacao_fio|default:"Vertical" }}
+                                    {% if peca.rotacao_fixa %}
+                                        <div style="font-size: 0.65rem;" class="text-danger font-weight-bold">ROTAÇÃO FIXA</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center px-4 py-3">
+                                    <span class="font-weight-bold text-primary">{{ peca.qtd_padrao }}</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">Nenhuma peça detectada neste molde.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

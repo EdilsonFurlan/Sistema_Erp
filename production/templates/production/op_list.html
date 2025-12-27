@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Ordens de Produção | Gestão ERP{% endblock %}
+
+{% block breadcrumb %}
+    <i class="fas fa-chevron-right text-muted me-2"></i>
+    <span>Produção</span>
+    <i class="fas fa-chevron-right text-muted me-2 ms-2"></i>
+    <span class="text-primary font-weight-bold">Ordens de Produção</span>
+{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <div class="erp-header">
+        <h1>Ordens de Produção</h1>
+        <a href="{% url 'create_op_screen' %}" class="btn-erp btn-primary">
+            <i class="fas fa-plus"></i> NOVA OP
+        </a>
+    </div>
+
+    <!-- Filters/Search (Placeholder for now) -->
+    <div class="filter-card">
+        <div class="search-input-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" class="search-input-erp" placeholder="Buscar por OP, Produto ou Referência...">
+        </div>
+        <div class="filter-group ms-auto">
+            <label class="filter-label">Status:</label>
+            <select class="form-select form-select-sm" style="width: 150px; border-color: #e2e8f0;">
+                <option value="all">Todos</option>
+                <option value="PLANEJADA">Planejada</option>
+                <option value="EM_PRODUCAO">Em Produção</option>
+                <option value="FINALIZADA">Finalizada</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>OP #</th>
+                    <th>Data Criação</th>
+                    <th>Produto / Referência</th>
+                    <th>Quantidade</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for op in ops %}
+                <tr>
+                    <td>
+                        <span class="font-weight-bold text-dark">#{{ op.id }}</span>
+                    </td>
+                    <td>
+                        <div class="text-muted">{{ op.data_criacao|date:"d/m/Y H:i" }}</div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if op.produto.molde.imagem %}
+                                <img src="{{ op.produto.molde.imagem.url }}" class="molde-thumb-table">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px; color: #cbd5e1;">
+                                    <i class="fas fa-shapes"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div class="font-weight-bold text-dark">{{ op.produto.molde.nome }}</div>
+                                <div class="small text-muted">{{ op.produto.nome }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="font-weight-bold">{{ op.quantidade_total }}</span> pçs
+                    </td>
+                    <td>
+                        {% if op.status == 'PLANEJADA' %}
+                            <span class="badge" style="background: #ebf8ff; color: #3182ce;">Planejada</span>
+                        {% elif op.status == 'EM_PRODUCAO' %}
+                            <span class="badge" style="background: #feebc8; color: #d69e2e;">Em Produção</span>
+                        {% elif op.status == 'FINALIZADA' %}
+                            <span class="badge" style="background: #c6f6d5; color: #2f855a;">Finalizada</span>
+                        {% else %}
+                             <span class="badge bg-light text-muted">{{ op.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            {% if op.status == 'PLANEJADA' %}
+                            <a href="{% url 'op_change_status' op.id 'EM_PRODUCAO' %}" class="btn-action btn-success-light" title="Liberar Produção (Start)">
+                                <i class="fas fa-play text-success"></i>
+                            </a>
+                            {% elif op.status == 'EM_PRODUCAO' %}
+                            <a href="{% url 'op_change_status' op.id 'FINALIZADA' %}" class="btn-action btn-danger-light" title="Finalizar Produção (Stop)" onclick="return confirm('Tem certeza que deseja finalizar esta OP?')">
+                                <i class="fas fa-stop text-danger"></i>
+                            </a>
+                            {% endif %}
+
+                            <a href="{% url 'op_allocation' op.id %}" class="btn-action btn-info-light" title="Alocar Máquinas">
+                                <i class="fas fa-robot text-info"></i>
+                            </a>
+
+                            <button class="btn-action btn-secondary-erp" title="Imprimir">
+                                <i class="fas fa-print"></i>
+                            </button>
+                            {% with first_item=op.itens_origem.first %}
+                                {% if first_item %}
+                                <a href="{% url 'visualize_order' first_item.pedido_item.id %}" class="btn-action btn-secondary-erp" title="Ver Encaixe / Nesting" target="_blank">
+                                    <i class="fas fa-border-all"></i>
+                                </a>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="fas fa-clipboard-list fa-2x mb-3 opacity-50"></i>
+                            <p>Nenhuma Ordem de Produção encontrada.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

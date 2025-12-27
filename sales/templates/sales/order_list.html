@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Pedidos{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <div class="erp-card">
+        <div class="erp-header">
+            <div>
+                <h1 class="erp-title">Pedidos Realizados</h1>
+                <p class="text-muted small mb-0">Controle comercial e liberação para produção.</p>
+            </div>
+            <a href="{% url 'sales_order_create' %}" class="btn-erp btn-erp-primary" style="background-color: #3182ce; color: white;">
+                <i class="fas fa-plus"></i> Novo Pedido
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="erp-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Cliente / Parceiro</th>
+                        <th>Data Pedido</th>
+                        <th>Qtd Itens</th>
+                        <th>Status Produção</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td class="fw-bold">#{{ order.id }}</td>
+                        <td>{{ order.cliente }}</td>
+                        <td>
+                            <div>{{ order.data|date:"d/m/Y" }}</div>
+                            <small class="text-muted">{{ order.data|date:"H:i" }}</small>
+                        </td>
+                        <td>
+                            <span class="count-badge">{{ order.itens.count }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge" style="background-color: {{ order.status_color }};">
+                                {{ order.status_display }}
+                            </span>
+                            {% if order.pending_msg %}
+                                <span class="pending-info">⚠️ {{ order.pending_msg }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'order_detail' order.id %}" class="action-link" title="Ver Detalhes">
+                                    <i class="fas fa-eye"></i> Detalhes
+                                </a>
+                                <a href="{% url 'sales_order_update' order.id %}" class="action-link" style="color: #38a169;" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-shopping-cart fa-3x mb-3 opacity-25"></i>
+                                <p>Nenhum pedido encontrado no sistema.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

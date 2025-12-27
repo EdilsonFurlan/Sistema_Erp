@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes do Pedido #{{ order.id }}{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { background: white; padding: 20px; border-radius: 8px; max-width: 900px; margin: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .info { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f9f9f9; }
+        .btn { display: inline-block; padding: 8px 15px; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; margin-right: 5px; }
+        .btn-config { background: #f39c12; }
+        .btn-view { background: #3498db; }
+        .btn-back { background: #95a5a6; }
+        .btn:hover { opacity: 0.9; }
+        
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            min-width: 120px;
+            text-align: center;
+        }
+        .order-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="info">
+            <div class="order-meta">
+                <div>
+                    <strong>Cliente:</strong> {{ order.cliente }}<br>
+                    <strong>Data:</strong> {{ order.data|date:"d/m/Y H:i" }}<br>
+                    <strong>Total Pedido:</strong> <span style="font-size: 1.2em; color: #2c3e50; font-weight: bold;">R$ {{ order.valor_total }}</span>
+                </div>
+                <div style="text-align: right;">
+                    <span class="status-badge" style="background-color: {{ order.status_color }};">
+                        {{ order.status_display }}
+                    </span>
+                    {% if order.pending_msg %}
+                        <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 5px;">⚠️ {{ order.pending_msg }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+            <a href="{% url 'sales_order_update' order.id %}" class="btn" style="background: #2ecc71;">✏️ Editar Pedido</a>
+            <a href="{% url 'order_materials' order.id %}" class="btn" style="background: #8e44ad;">📋 Relatório de Materiais</a>
+        </div>
+
+        <h3>Itens do Pedido</h3>
+        {% if order.itens.all %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Produto</th>
+                    <th>Status</th>
+                    <th>Quantidade</th>
+                    <th>Preço Un.</th>
+                    <th>Subtotal</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.itens.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        {% if item.produto %}
+                            {{ item.produto }}
+                        {% elif item.molde %}
+                            Molde: {{ item.molde.nome }}
+                        {% else %}
+                            <span style="color:red;">A DEFINIR</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="padding: 4px 8px; border-radius: 4px; font-size: 0.9em; background: #eee;">
+                            {{ item.get_status_display }}
+                        </span>
+                    </td>
+                    <td><strong>{{ item.quantidade }}</strong> un</td>
+                    <td>R$ {{ item.preco_unitario }}</td>
+                    <td>R$ {{ item.subtotal }}</td>
+                    <td>
+                        {% if item.status == 'PENDENTE_CADASTRO' %}
+                            <a href="{% url 'release_item' item.id %}" class="btn" style="background: #27ae60;">🚀 Liberar</a>
+                        {% endif %}
+                        <a href="{% url 'configure_order_item' item.id %}" class="btn btn-config">Configurar</a>
+                        <a href="{% url 'visualize_order' item.id %}" class="btn btn-view">Ver Encaixe/Consumo</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>Nenhum item neste pedido.</p>
+        {% endif %}
+
+        <br><br>
+        <a href="{% url 'order_list' %}" class="btn btn-back">← Voltar para Lista</a>
+    </div>
+{% endblock %}

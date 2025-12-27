@@ -1,0 +1,96 @@
+<div class="row g-4">
+    {% for op_data in dashboard_data %}
+    <div class="col-12 col-xl-6">
+        <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden" style="transition: transform 0.2s;">
+            <!-- Header OP -->
+            <div class="card-header bg-white border-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-start">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                        {{ op_data.op.id }}
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-dark">{{ op_data.op.produto.nome }}</h5>
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 11px; letter-spacing: 1px;">Ordem de Produção</small>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <h3 class="mb-0 fw-bold text-primary display-6">{{ op_data.total_prod_seconds|floatformat:0 }}<span class="fs-6 text-muted fw-normal ms-1">s</span></h3>
+                    <small class="text-muted fs-7">TEMPO ACUMULADO</small>
+                </div>
+            </div>
+            
+            <!-- Lista Máquinas -->
+            <div class="card-body bg-light p-0 pt-1">
+                <div class="list-group list-group-flush border-top-0">
+                    {% for maq in op_data.maquinas %}
+                    <div class="list-group-item border-0 py-3 px-4 d-flex align-items-center justify-content-between mb-1 mx-2 rounded-3 {% if maq.is_active %}bg-white shadow-sm my-2{% else %}bg-transparent{% endif %}">
+                        
+                        <!-- Coluna Info Maquina -->
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="position-relative">
+                                <!-- Status Dot -->
+                                <div class="rounded-circle {% if maq.is_active %}bg-success{% else %}bg-secondary opacity-50{% endif %}" 
+                                     style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-robot text-white small"></i>
+                                </div>
+                                {% if maq.is_active %}
+                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-success border border-light rounded-circle">
+                                    <span class="visually-hidden">Active</span>
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark">{{ maq.obj.nome }}</h6>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge {% if maq.is_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} border rounded-pill px-2 py-1" style="font-size: 10px;">
+                                        {% if maq.is_active %}EM PRODUÇÃO{% else %}PARADA{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Coluna Cronometro -->
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="text-end">
+                                <span class="d-block font-monospace fw-bold fs-5 text-dark">
+                                    {{ maq.total_seconds|floatformat:0 }}s
+                                </span>
+                                <small class="text-muted" style="font-size: 10px;">PRODUZIDO</small>
+                            </div>
+                            <!-- Visual Activity Bar -->
+                            {% if maq.is_active %}
+                            <div style="width: 4px; height: 30px; background: #10b981; border-radius: 2px;" class="animate-height"></div>
+                            {% else %}
+                            <div style="width: 4px; height: 30px; background: #e5e7eb; border-radius: 2px;"></div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <p class="text-muted mb-0 small">Nenhuma máquina alocada para esta OP.</p>
+                        <a href="#" class="btn btn-link btn-sm text-decoration-none">Gerenciar Alocação</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between">
+                <small class="text-muted">Meta: {{ op_data.op.quantidade_total }} pçs</small>
+                <small class="text-muted">Máquinas: {{ op_data.maquinas|length }}</small>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 py-5">
+        <div class="text-center">
+            <div class="mb-3 p-4 bg-light rounded-circle d-inline-block">
+                <i class="fas fa-industry fa-3x text-muted opacity-50"></i>
+            </div>
+            <h3 class="h5 text-dark fw-bold">Pátio Parado</h3>
+            <p class="text-muted">Não há ordens de produção com status "EM PRODUÇÃO" no momento.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>

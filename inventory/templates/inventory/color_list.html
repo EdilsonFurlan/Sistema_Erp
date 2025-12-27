@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Cores{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #8e44ad; margin-top: 0; }
+        .color-box { width: 30px; height: 30px; display: inline-block; border-radius: 50%; border: 1px solid #ccc; vertical-align: middle; margin-right: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #eee; }
+        .btn { padding: 8px 12px; background: #8e44ad; color: white; text-decoration: none; border-radius: 4px; }
+        .back-btn { background: #95a5a6; float: right; }
+        .top-actions { margin-bottom: 20px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="top-actions">
+            <a href="{% url 'material_list' %}" class="btn back-btn">Voltar</a>
+            <a href="{% url 'color_create' %}" class="btn">+ Nova Cor</a>
+        </div>
+        
+        <h1>Cores Disponíveis</h1>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Cor</th>
+                    <th>Nome</th>
+                    <th>Hex</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in colors %}
+                <tr>
+                    <td><div class="color-box" style="background-color: {{ c.hex_code }};"></div></td>
+                    <td>{{ c.nome }}</td>
+                    <td>{{ c.hex_code }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3">Nenhuma cor cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

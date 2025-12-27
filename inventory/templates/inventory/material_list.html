@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Materiais | Gestão ERP{% endblock %}
+
+{% block extra_head %}{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <div class="erp-card">
+        <div class="erp-header">
+            <h1 class="erp-title">Estoque de Materiais</h1>
+            <div class="d-flex gap-2">
+                <a href="{% url 'movement_list' %}" class="btn-erp-secondary">
+                    <i class="fas fa-exchange-alt"></i> Movimentações
+                </a>
+                <a href="{% url 'color_list' %}" class="btn-erp-secondary">
+                    <i class="fas fa-palette"></i> Cores
+                </a>
+                <a href="{% url 'material_create' %}" class="btn-erp-primary">
+                    <i class="fas fa-plus"></i> Novo Material
+                </a>
+            </div>
+        </div>
+
+        <div class="summary-bar">
+            <div class="summary-item">Total de Materiais: <b>{{ materials|length }}</b></div>
+            <div class="summary-item">Valor Total Estimado: <b class="text-success">R$ {{ total_value|floatformat:2 }}</b></div>
+            <div class="ms-auto" style="min-width: 300px;">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="materialSearch" class="search-input" placeholder="Buscar materiais..." onkeyup="filterMaterials()">
+                </div>
+            </div>
+        </div>
+
+        <div class="erp-table-container">
+            <div class="table-responsive">
+                <table class="erp-table" id="materialTable">
+                    <thead>
+                        <tr>
+                            <th>Material</th>
+                            <th>Unidade</th>
+                            <th>Tipo</th>
+                            <th>Preço Médio</th>
+                            <th>Estoque</th>
+                            <th>Cores/Detalhes</th>
+                            <th class="text-end">AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in materials %}
+                        <tr>
+                            <td>
+                                <div class="material-info">
+                                    <div class="material-icon">
+                                        <i class="fas {% if m.eh_tecido %}fa-scroll{% else %}fa-box-open{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="material-name">{{ m.nome }}</div>
+                                        {% if m.tem_cor %}
+                                        <span class="badge bg-purple-soft text-purple" style="font-size: 0.7rem; background: #faf5ff; color: #6b46c1; border: 1px solid #e9d8fd;">VARIA COR</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ m.unidade }}</td>
+                            <td>
+                                {% if m.eh_tecido %}
+                                <span class="badge bg-blue-soft text-blue" style="background: #ebf8ff; color: #3182ce; border: 1px solid #bee3f8;">TECIDO</span>
+                                {% else %}
+                                <span class="badge bg-gray-soft text-gray" style="background: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0;">INSUMO</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold">R$ {{ m.preco_medio }}</td>
+                            <td>
+                                <span class="{% if m.estoque_atual <= 0 %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                                    {{ m.estoque_atual|floatformat:2 }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap">
+                                    {% if m.estoques.all %}
+                                        {% for est in m.estoques.all %}
+                                            <div class="color-chip" title="{{ est.cor.nome|default:'Padrão' }}">
+                                                {% if est.cor %}
+                                                <div class="color-dot" style="background-color: {{ est.cor.hex_code }}"></div>
+                                                {% endif %}
+                                                {{ est.quantidade|floatformat:1 }}
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <a href="{% url 'material_edit' m.pk %}" class="action-link" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if m.tem_cor %}
+                                    <a href="{% url 'material_add_color' m.pk %}" class="action-link" style="color: #6b46c1;" title="Adicionar Cor">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'material_delete' m.pk %}" class="action-link delete" title="Excluir">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7">
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fas fa-layer-group fa-3x mb-3 opacity-25"></i>
+                                    <p>Nenhum material encontrado no estoque.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterMaterials() {
+        var input, filter, table, tr, td, i, j, txtValue, found;
+        input = document.getElementById("materialSearch");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("materialTable");
+        tr = table.getElementsByTagName("tr");
+
+        for (i = 1; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td");
+            found = false;
+            for (j = 0; j < td.length - 1; j++) {
+                if (td[j]) {
+                    txtValue = td[j].textContent || td[j].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (found) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+</script>
+{% endblock %}

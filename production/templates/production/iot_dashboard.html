@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="h-100 d-flex flex-column">
+    <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="letter-spacing: -0.5px;">🏭 Monitoramento de Produção</h1>
+            <p class="text-muted mb-0 small">Dashboard de chão de fábrica em tempo real (MQTT)</p>
+        </div>
+        <div>
+            <div class="d-flex align-items-center gap-2 px-3 py-2 bg-white rounded-pill shadow-sm border">
+                <span class="status-dot animate-pulse"></span>
+                <span class="text-success fw-bold small">SISTEMA ONLINE</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container de Polling -->
+    <div id="iot-grid" 
+         class="flex-grow-1 overflow-auto px-2 pb-4"
+         hx-get="{% url 'iot_dashboard_status' %}" 
+         hx-trigger="load, every 2s" 
+         hx-swap="innerHTML">
+         
+         <!-- Placeholder de Loading -->
+         <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted opacity-50">
+             <i class="fas fa-circle-notch fa-spin fa-3x mb-3"></i>
+             <p class="text-uppercase small fw-bold">Conectando às máquinas...</p>
+         </div>
+    </div>
+</div>
+
+<style>
+.status-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+}
+.animate-pulse {
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+</style>
+{% endblock %}
