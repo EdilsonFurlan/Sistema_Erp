@@ -6,6 +6,7 @@ from products.models import Produto
 from django.db.models import Sum
 from django.utils import timezone
 from .models import OrdemProducao, OrdemProducaoItem, Maquina, RegistroProducao
+from .forms import MaquinaForm
 
 def production_dashboard(request):
     """
@@ -281,3 +282,43 @@ def op_allocation(request, pk):
         'op': op,
         'maquinas': maquinas
     })
+
+def maquina_list(request):
+    maquinas = Maquina.objects.all().order_by('nome')
+    context = {
+        'maquinas': maquinas,
+        'total_maquinas': maquinas.count(),
+        'maquinas_ligadas': maquinas.filter(status_atual='LIGADO').count()
+    }
+    return render(request, 'production/maquina_list.html', context)
+
+def maquina_create(request):
+    if request.method == 'POST':
+        form = MaquinaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Máquina cadastrada com sucesso!")
+            return redirect('maquina_list')
+    else:
+        form = MaquinaForm()
+    return render(request, 'production/maquina_form.html', {'form': form})
+
+def maquina_update(request, pk):
+    maquina = get_object_or_404(Maquina, pk=pk)
+    if request.method == 'POST':
+        form = MaquinaForm(request.POST, instance=maquina)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Máquina atualizada com sucesso!")
+            return redirect('maquina_list')
+    else:
+        form = MaquinaForm(instance=maquina)
+    return render(request, 'production/maquina_form.html', {'form': form})
+
+def maquina_delete(request, pk):
+    maquina = get_object_or_404(Maquina, pk=pk)
+    # Check if machine has history or linked ops? Maybe prevent delete if critical.
+    # For now, standard delete.
+    maquina.delete()
+    messages.success(request, "Máquina removida.")
+    return redirect('maquina_list')

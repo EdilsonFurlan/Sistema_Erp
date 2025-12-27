@@ -1,0 +1,1 @@
+\n--- START CALC ---\nItem: PrrodutoMolde1 | Qty: 100\n  Insumo: CASTELINHO 25 | UnitQty: 2.0 | Qty: 100 | Total: 200.0\n  Insumo: Cursor 05 niquel | UnitQty: 2.0 | Qty: 100 | Total: 200.0\n  Insumo: Ziper 05 | UnitQty: 0.8 | Qty: 100 | Total: 80.0\n

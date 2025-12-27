@@ -11,4 +11,10 @@ urlpatterns = [
     path('iot/status/', views.iot_dashboard_status, name='iot_dashboard_status'),
     path('status-change/<int:pk>/<str:status>/', views.op_change_status, name='op_change_status'),
     path('allocation/<int:pk>/', views.op_allocation, name='op_allocation'),
+    
+    # Maquinas
+    path('machines/', views.maquina_list, name='maquina_list'),
+    path('machines/create/', views.maquina_create, name='maquina_create'),
+    path('machines/update/<int:pk>/', views.maquina_update, name='maquina_update'),
+    path('machines/delete/<int:pk>/', views.maquina_delete, name='maquina_delete'),
 ]

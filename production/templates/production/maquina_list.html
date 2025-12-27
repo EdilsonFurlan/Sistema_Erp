@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Máquinas - Gestão ERP{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right text-muted me-2"></i>
+<a href="{% url 'production_dashboard' %}" class="text-decoration-none text-muted">Produção</a>
+<i class="fas fa-chevron-right text-muted mx-2"></i>
+<span>Máquinas</span>
+{% endblock %}
+
+{% block content %}
+<div class="erp-container">
+    <div class="erp-header">
+        <h1>Gerenciamento de Máquinas</h1>
+        <a href="{% url 'maquina_create' %}" class="btn-erp btn-create">
+            <i class="fas fa-plus"></i> Nova Máquina
+        </a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card primary">
+            <div class="stat-value">{{ total_maquinas }}</div>
+            <div class="stat-label">Total de Máquinas</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-value">{{ maquinas_ligadas }}</div>
+            <div class="stat-label">Ligadas Agora</div>
+        </div>
+        <div class="stat-card info">
+            <div class="stat-value text-muted">-</div>
+            <div class="stat-label">Eficiência Média</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="erp-table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Setor</th>
+                    <th>Tópico MQTT</th>
+                    <th>Status Atual</th>
+                    <th>OP Atual</th>
+                    <th>Última Atualização</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for maquina in maquinas %}
+                <tr>
+                    <td><strong>{{ maquina.nome }}</strong></td>
+                    <td>{{ maquina.setor|default:"-" }}</td>
+                    <td><code>{{ maquina.topico_mqtt }}</code></td>
+                    <td>
+                        {% if maquina.status_atual == 'LIGADO' %}
+                            <span class="badge bg-success">LIGADO</span>
+                        {% else %}
+                            <span class="badge bg-secondary">DESLIGADO</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if maquina.op_atual %}
+                            <a href="#" class="text-decoration-none">#{{ maquina.op_atual.id }}</a>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ maquina.ultima_atualizacao|date:"d/m/Y H:i" }}</td>
+                    <td class="actions-cell">
+                        <a href="{% url 'maquina_update' maquina.pk %}" class="btn-action btn-secondary-erp" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'maquina_delete' maquina.pk %}" class="btn-action btn-danger-light" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir esta máquina?');">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        Nenhuma máquina cadastrada.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

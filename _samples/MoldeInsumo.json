@@ -1,0 +1,67 @@
+{
+    "accessories": [
+        {
+            "id": 4,
+            "name": "CASTELINHO 25",
+            "qty": 2,
+            "unit": "un"
+        },
+        {
+            "id": 7,
+            "name": "Cursor 05 niquel",
+            "qty": 2,
+            "unit": "un"
+        },
+        {
+            "id": 5,
+            "name": "Ziper 05",
+            "qty": 800,
+            "unit": "mm"
+        }
+    ],
+    "format": "MeuCAD-1.1",
+    "marks": [
+    ],
+    "pieces": [
+        {
+            "geom": {
+                "cx": 214,
+                "cy": 216,
+                "halfH": 145,
+                "halfW": 120,
+                "rBL": 0,
+                "rBR": 0,
+                "rTL": 0,
+                "rTR": 0,
+                "type": "rect"
+            },
+            "grain": "vertical",
+            "id": 1,
+            "materialId": 1,
+            "materialName": "NYLON 600",
+            "name": "Retângulo",
+            "qty": 2
+        },
+        {
+            "geom": {
+                "cx": 446,
+                "cy": 216,
+                "halfH": 110,
+                "halfW": 80,
+                "rBL": 0,
+                "rBR": 0,
+                "rTL": 0,
+                "rTR": 0,
+                "type": "rect"
+            },
+            "grain": "vertical",
+            "id": 2,
+            "materialId": 1,
+            "materialName": "NYLON 600",
+            "name": "Retângulo",
+            "qty": 1
+        }
+    ],
+    "piques": [
+    ]
+}

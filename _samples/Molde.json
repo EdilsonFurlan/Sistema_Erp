@@ -1,0 +1,74 @@
+{
+  "format": "MeuCAD-2.0",
+  "molde_id": "REF-2025-BOLSA-01",
+  "nome": "Bolsa Escolar Padrão",
+  
+  "materiais_padrao": [
+    {
+      "id": 1,
+      "tipo": "tecido",
+      "nome_sugerido": "NYLON 600",
+      "unidade": "mt"
+    },
+    {
+      "id": 2,
+      "tipo": "tecido",
+      "nome_sugerido": "bagum",
+      "unidade": "mt"
+    }
+  ],
+  "pieces": [
+    {
+      "id": 1,
+      "name": "Corpo Frente Costa",
+      "qty": 2,
+      "area_mm2": 52500,
+      "material_id_ref": 1, 
+      "geom": {
+        "type": "poly",
+        "closed": true,
+        "pts": [
+           {"x": 377, "y": 79},
+           {"x": 617, "y": 79},
+           {"x": 617, "y": 299},
+           {"x": 377, "y": 299}
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Bolso Interno",
+      "qty": 1,
+      "area_mm2": 15750,
+      "material_id_ref": 2,
+      "geom": {
+        "type": "rect",
+        "cx": 185,
+        "cy": 225,
+        "halfH": 175,
+        "halfW": 45,
+        "rBL": 0, "rBR": 0, "rTL": 0, "rTR": 0
+      }
+    }
+  ],
+  "insumos": [
+    {
+      "id": 5,
+      "nome": "Ziper 05",
+      "quantidade": 450,
+      "unidade": "mm"
+    },
+    {
+      "id": 7,
+      "nome": "Cursor 05 niquel",
+      "quantidade": 2,
+      "unidade": "un"
+    },
+    {
+      "id": 4,
+      "nome": "CASTELINHO 25",
+      "quantidade": 1,
+      "unidade": "un"
+    }
+  ]
+}

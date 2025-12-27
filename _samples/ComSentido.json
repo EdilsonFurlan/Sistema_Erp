@@ -1,0 +1,178 @@
+{
+    "format": "MeuCAD-1.1",
+    "marks": [
+        {
+            "edge": "Right",
+            "id": 1,
+            "offset": 100,
+            "pieceId": 1,
+            "visible": true
+        },
+        {
+            "edge": "Left",
+            "id": 2,
+            "offset": 100,
+            "pieceId": 1,
+            "visible": true
+        },
+        {
+            "edge": "Bottom",
+            "id": 3,
+            "offset": 140,
+            "pieceId": 1,
+            "visible": true
+        },
+        {
+            "edge": "Top",
+            "id": 4,
+            "offset": 140,
+            "pieceId": 1,
+            "visible": true
+        }
+    ],
+    "pieces": [
+        {
+            "geom": {
+                "closed": true,
+                "pts": [
+                    {
+                        "x": 377,
+                        "y": 79
+                    },
+                    {
+                        "x": 617,
+                        "y": 79
+                    },
+                    {
+                        "x": 617,
+                        "y": 299
+                    },
+                    {
+                        "x": 377,
+                        "y": 299
+                    }
+                ],
+                "radii": [
+                    100,
+                    100,
+                    0,
+                    0
+                ],
+                "type": "poly"
+            },
+            "grain": "vertical",
+            "id": 1,
+            "name": "Corpo Frente Costa",
+            "qty": 2
+        },
+        {
+            "geom": {
+                "cx": 341,
+                "cy": 451,
+                "radius": 114.0175425099138,
+                "type": "circle"
+            },
+            "grain": "free",
+            "id": 2,
+            "name": "Fundo",
+            "qty": 1
+        },
+        {
+            "geom": {
+                "cx": 185,
+                "cy": 225,
+                "halfH": 175,
+                "halfW": 45,
+                "rBL": 0,
+                "rBR": 0,
+                "rTL": 0,
+                "rTR": 0,
+                "type": "rect"
+            },
+            "grain": "vertical",
+            "id": 3,
+            "name": "Emenda Corpo",
+            "qty": 1
+        },
+        {
+            "geom": {
+                "cx": 751,
+                "cy": 323,
+                "halfH": 160,
+                "halfW": 35,
+                "rBL": 0,
+                "rBR": 0,
+                "rTL": 0,
+                "rTR": 0,
+                "type": "rect"
+            },
+            "grain": "vertical",
+            "id": 4,
+            "name": "Fole Corpo",
+            "qty": 1
+        },
+        {
+            "geom": {
+                "cx": 535,
+                "cy": 583,
+                "halfH": 50,
+                "halfW": 175,
+                "rBL": 0,
+                "rBR": 0,
+                "rTL": 0,
+                "rTR": 0,
+                "type": "rect"
+            },
+            "grain": "horizontal",
+            "id": 5,
+            "name": "Retângulo",
+            "qty": 1
+        }
+    ],
+    "piques": [
+        {
+            "depth": 8,
+            "edge": "Perimeter",
+            "id": 1,
+            "kind": "V",
+            "offset": 358.19667392950714,
+            "pairId": 2,
+            "pieceId": 2,
+            "visible": true,
+            "width": 6
+        },
+        {
+            "depth": 8,
+            "edge": "Perimeter",
+            "id": 2,
+            "kind": "V",
+            "offset": 0,
+            "pairId": 1,
+            "pieceId": 2,
+            "visible": true,
+            "width": 6
+        },
+        {
+            "depth": 8,
+            "edge": "Bottom",
+            "id": 3,
+            "kind": "V",
+            "offset": 120,
+            "pairId": 4,
+            "pieceId": 1,
+            "visible": true,
+            "width": 6
+        },
+        {
+            "depth": 8,
+            "edge": "Top",
+            "id": 4,
+            "kind": "V",
+            "offset": 120,
+            "pairId": 3,
+            "pieceId": 1,
+            "visible": true,
+            "width": 6
+        }
+    ]
+}
